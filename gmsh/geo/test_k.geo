@@ -20,4 +20,4 @@ Physical Curve("right side", 2) = {2}; // neumann
 Physical Surface("dummy") = {1}; // group indicating dummy material
 
 Mesh 2;
-Save "..\msh\test_k.msh";
+Save "../msh/test_k.msh";

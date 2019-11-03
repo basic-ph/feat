@@ -11,11 +11,10 @@ class BoundaryCondition():
         # array containing indices of nodes in the boundary
         self.nodes = unique(mesh.cells["line"][self.elements])
         
-        print(self.name)
-        print(self.nodes)
+        # print(self.name)
+        # print(self.nodes)
 
-    def compute_global_dof(self, nodes, local_dof):
-        dof_num = nodes.shape[0] * local_dof.shape[0]
+    def compute_global_dof(self, nodes, local_dof, dof_num):
         global_dof = np.zeros(dof_num, dtype=np.int32)
         i = 0
         for n in nodes:
@@ -33,10 +32,11 @@ class DirichletBC(BoundaryCondition):
         # read list of constrained dof in this bc
         self.constrained_dof = np.asarray(data["bc"]["dirichlet"][name]["dof"])
         self.imposed_disp = data["bc"]["dirichlet"][name]["value"]
-        print(self.constrained_dof)
-        print(self.imposed_disp)
+        self.global_dof_num = self.nodes.shape[0] * self.constrained_dof.shape[0]
+        # print(self.constrained_dof)
+        # print(self.imposed_disp)
         
-        self.global_dof = super(DirichletBC, self).compute_global_dof(self.nodes, self.constrained_dof)
+        self.global_dof = super(DirichletBC, self).compute_global_dof(self.nodes, self.constrained_dof, self.global_dof_num)
         print(self.global_dof)
 
     def impose(self, K, R):
@@ -48,18 +48,17 @@ class DirichletBC(BoundaryCondition):
             R[d] = self.imposed_disp  # enforce value
 
 
-
-
 class NeumannBC(BoundaryCondition):
 
     def __init__(self, name, data, mesh):
         super().__init__(name, data, mesh)
         self.constrained_dof = np.asarray(data["bc"]["neumann"][name]["dof"])
         self.imposed_load = data["bc"]["neumann"][name]["value"]
-        print(self.constrained_dof)
-        print(self.imposed_load)
+        self.global_dof_num = self.nodes.shape[0] * self.constrained_dof.shape[0]
+        # print(self.constrained_dof)
+        # print(self.imposed_load)
         
-        self.global_dof = super(NeumannBC, self).compute_global_dof(self.nodes, self.constrained_dof)
+        self.global_dof = super(NeumannBC, self).compute_global_dof(self.nodes, self.constrained_dof, self.global_dof_num)
         print(self.global_dof)
 
     def impose(self, R):

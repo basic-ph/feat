@@ -6,13 +6,14 @@ from pprint import pprint
 import meshio
 import numpy as np
 
-from fem import stiffness_matrix, assembly, apply_bc, save_reaction_data
-from tools import compute_E_matrices, gauss_quadrature, compute_E_matrices
+from fem import stiffness_matrix, assembly, save_dirichlet_row, dirichlet_dof
+from tools import compute_E_matrices, gauss_quadrature
 
-from bc import BoundaryCondition, DirichletBC, NeumannBC
+from bc import DirichletBC, NeumannBC
+
 
 # DATA
-with open(r'..\data\test_k_2.json', "r") as data_file:
+with open(r'../data/test_k_2.json', "r") as data_file:
         data = json.load(data_file)
 
 element_type = data["element type"]
@@ -23,7 +24,7 @@ thickness = data["thickness"]
 weights, locations = gauss_quadrature(data)
 
 # MESH
-mesh = meshio.read(r"..\gmsh\msh\test_k.msh")
+mesh = meshio.read(r"../gmsh/msh/test_k.msh")
 nodal_coordinates = mesh.points[:,:2]  # slice is used to remove 3rd coordinate
 nodes = mesh.points.shape[0]
 dof = nodes * 2
@@ -55,25 +56,29 @@ for e in range(elements):
         )
         K = assembly(e, connectivity_table, k, K)
 
-K_saved = np.copy(K)
+# K_saved = np.copy(K)  # FIXME now this is useless
 
 print("K:\n", K)
 print("R:\n", R)
 
-# apply_bc(data, mesh, K, R)
+
 left_side = DirichletBC("left side", data, mesh)
-left_side.impose(K, R)
 right_side = NeumannBC("right side", data, mesh)
+# contrained dof rows of K are saved now
+dirichlet_dof = dirichlet_dof(left_side)
+print(dirichlet_dof)
+K_rows = K[dirichlet_dof, :]
+print(K_rows)
+
+
+left_side.impose(K, R)
 right_side.impose(R)
 print("K:\n", K)
 print("R:\n", R)
 
+# Solution of the system
 D = np.linalg.solve(K, R)
 print("D:\n", D)
 
-# reaction_dofs, K_react = save_reaction_data(data, mesh, K_saved)
-# print()
-# print(reaction_dofs)
-# print(K_react)
-# R = np.dot(K_react, D)
-# print(R)
+# reactions = np.dot(K_rows, D)
+# print(reactions)
