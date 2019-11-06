@@ -1,69 +1,95 @@
+import json
+from pprint import pprint
 
-import sys
-
+import meshio
 import numpy as np
-from numpy.linalg import det, inv
-from tools import gauss_quadrature
 
-x = lambda a, i, j: a[i][0] - a[j][0]
-y = lambda b, i, j: b[i][1] - b[j][1]
+from boundary import DirichletBC, NeumannBC, dirichlet_dof
+from helpers import (assembly, compute_E_matrices, gauss_quadrature,
+                     stiffness_matrix)
+from post import compute_modulus
 
 
-def stiffness_matrix(e, data, mesh, coordinates, connectivity, material_map, E_matrices):
+def analysis(): 
+    # DATA
+    with open(r'../data/base.json', "r") as data_file:
+            data = json.load(data_file)
 
-    t = data["thickness"]
-    element_nodes = connectivity[e]
-    # print("nodes:\n", element_nodes)
-    c = coordinates[element_nodes]  # element coordinates
-    # print("coord:\n", c)
+    element_type = data["element type"]
+    ip_number = data["integration points"]
+    thickness = data["thickness"]
+    post = data["post-processing"]
 
-    element_material = material_map[e]
-    E = E_matrices[element_material]["E"]
-    # print("E:\n", E)
-
-    # element/local stiffness matrix
-    k = np.zeros((6, 6))  # for T6 --> 12 by 12
-
+    # NUMERICAL INTEGRATION
     weights, locations = gauss_quadrature(data)
-    # print(weights)
-    # print(locations)
-    for p in range(weights.shape[0]):
-        w = weights[p]
-        loc = locations[p]  # this is a [x, y] array
-        
-        j = ( (c[1][0] - c[0][0]) * (c[2][1] - c[0][1])  # det of jacobian matrix
-            - (c[2][0] - c[0][0]) * (c[1][1] - c[0][1])
-        )
-        # print(j)
-        B = (1/j) * np.array([
-            (y(c, 1, 2), 0, y(c, 2, 0), 0, y(c, 0, 1), 0),
-            (0, x(c, 2, 1), 0, x(c, 0, 2), 0 , x(c, 1, 0)),
-            (x(c, 2, 1), y(c, 1, 2), x(c, 0, 2), y(c, 2, 0), x(c, 1, 0), y(c, 0, 1))
-        ])
-        # print(B)
-        k_integral = B.T @ E @ B * t * 0.5 * j * w
-        k += k_integral
 
-    return k
+    # MESH
+    mesh = meshio.read(r"../gmsh/msh/base.msh")
+    nodal_coordinates = mesh.points[:,:2]  # slice is used to remove 3rd coordinate
+    nodes = mesh.points.shape[0]
+    dof = nodes * 2
+    connectivity_table = mesh.cells["triangle"]
+    elements = connectivity_table.shape[0]
+
+    # this array contains material tag for every element in mesh
+    element_material_map = mesh.cell_data["triangle"]["gmsh:physical"]
+    # print(element_material_map)
+    # print()
+
+    E_matrices = compute_E_matrices(data, mesh)
+    # pprint(E_matrices)
+    # print()
+
+    # arrays init
+    K = np.zeros((dof, dof))
+    R = np.zeros(dof)
+
+    for e in range(elements):
+            k = stiffness_matrix(
+                    e,
+                    data,
+                    mesh,
+                    nodal_coordinates,
+                    connectivity_table,
+                    element_material_map,
+                    E_matrices
+            )
+            K = assembly(e, connectivity_table, k, K)
+
+    # K_saved = np.copy(K)  # FIXME now this is useless
+
+    print("K:\n", K)
+    print("R:\n", R)
+    print()
 
 
-def assembly(e, connectivity, k, K):
-    element_nodes = connectivity[e]
-    element_dofs = np.zeros(6, dtype=np.int32)  # becomes 12 for T6
-    for n in range(element_nodes.shape[0]):  # TODO check if applicable for BC
-        element_dofs[n*2] = element_nodes[n] * 2
-        element_dofs[n*2+1] = element_nodes[n] * 2 + 1
-    # print(element_dofs)  
+    left_side = DirichletBC("left side", data, mesh)
+    left_corner = DirichletBC("bottom left corner", data, mesh)
+    right_side = DirichletBC("right side", data, mesh)
+    if post:
+        # contrained dof rows of K are saved now
+        reaction_dof = dirichlet_dof(left_side)
+        K_rows = K[reaction_dof, :]
 
-    for i in range(6):  # becomes 12 for T6
-        I = element_dofs[i]
-        for j in range(6):  # becomes 12 for T6
-            J = element_dofs[j]
-            K[I, J] += k[i, j]
-    return K
+    left_side.impose(K, R)
+    left_corner.impose(K, R)
+    right_side.impose(K, R)
+    print("K:\n", K)
+    print("R:\n", R)
+    print()
+
+    # Solution of the system
+    D = np.linalg.solve(K, R)
+    print("D:\n", D)
+    print()
+
+    if post:
+        reactions = np.dot(K_rows, D)
+        print("reactions:\n", reactions)
+        print()
+        modulus = compute_modulus(mesh, right_side, reactions, thickness)
+        print("modulus:\n", modulus)
 
 
-def dirichlet_dof(*conditions):
-    array_list = [c.global_dof for c in conditions]
-    total_dof = np.concatenate(array_list)
-    return total_dof
+if __name__ == "__main__":
+    analysis()

@@ -49,6 +49,7 @@ Plane Surface(phy) = {loop_list[]};
 
 Physical Surface("cheese", newreg) = phy ;
 Physical Curve("left side", newreg) = {4}; // dirichlet
+Physical Point("bottom left corner", newreg) = {1}; // dirichlet
 Physical Curve("right side", newreg) = {2}; // neumann
 
 Mesh 2;
