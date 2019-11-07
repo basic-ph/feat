@@ -16,11 +16,12 @@ class BoundaryCondition():
         self.dim = mesh.field_data[name][1]
         if self.dim == 0:
             # array containing indices of elements in the boundary
-            self.elements = np.nonzero(mesh.cell_data["vertex"]["gmsh:physical"] == self.tag)[0]    
+            self.elements = np.nonzero(mesh.cell_data["vertex"]["gmsh:physical"] == self.tag)[0]
+            # array containing indices of nodes in the boundary
+            self.nodes = unique(mesh.cells["vertex"][self.elements])
         elif self.dim == 1:
             self.elements = np.nonzero(mesh.cell_data["line"]["gmsh:physical"] == self.tag)[0]
-        # array containing indices of nodes in the boundary
-        self.nodes = unique(mesh.cells["line"][self.elements])
+            self.nodes = unique(mesh.cells["line"][self.elements])
 
     def compute_global_dof(self, nodes, local_dof, dof_num):
         global_dof = np.zeros(dof_num, dtype=np.int32)
@@ -62,7 +63,9 @@ class NeumannBC(BoundaryCondition):
         self.imposed_load = data["bc"]["neumann"][name]["value"]
         self.global_dof_num = self.nodes.shape[0] * self.constrained_dof.shape[0]
         self.global_dof = super(NeumannBC, self).compute_global_dof(self.nodes, self.constrained_dof, self.global_dof_num)
-
+        print('name', self.name)
+        print('dir glob dof:', self.global_dof)
+        
     def impose(self, R):
         for d in self.global_dof:
             # nodal load = total load / number of nodes in this boundary

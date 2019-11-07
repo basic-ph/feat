@@ -7,12 +7,12 @@ import numpy as np
 from boundary import DirichletBC, NeumannBC, dirichlet_dof
 from helpers import (assembly, compute_E_matrices, gauss_quadrature,
                      stiffness_matrix)
-from post import compute_modulus
+from post_proc import compute_modulus
 
 
-def analysis(): 
+def analysis(data_path, mesh_path): 
     # DATA
-    with open(r'../data/base.json', "r") as data_file:
+    with open(data_path, "r") as data_file:
             data = json.load(data_file)
 
     element_type = data["element type"]
@@ -24,7 +24,7 @@ def analysis():
     weights, locations = gauss_quadrature(data)
 
     # MESH
-    mesh = meshio.read(r"../gmsh/msh/base.msh")
+    mesh = meshio.read(mesh_path)
     nodal_coordinates = mesh.points[:,:2]  # slice is used to remove 3rd coordinate
     nodes = mesh.points.shape[0]
     dof = nodes * 2
@@ -37,8 +37,8 @@ def analysis():
     # print()
 
     E_matrices = compute_E_matrices(data, mesh)
-    # pprint(E_matrices)
-    # print()
+    pprint(E_matrices)
+    print()
 
     # arrays init
     K = np.zeros((dof, dof))
@@ -54,9 +54,8 @@ def analysis():
                     element_material_map,
                     E_matrices
             )
+            print("k:\n",k)
             K = assembly(e, connectivity_table, k, K)
-
-    # K_saved = np.copy(K)  # FIXME now this is useless
 
     print("K:\n", K)
     print("R:\n", R)
@@ -64,16 +63,16 @@ def analysis():
 
 
     left_side = DirichletBC("left side", data, mesh)
-    left_corner = DirichletBC("bottom left corner", data, mesh)
-    right_side = DirichletBC("right side", data, mesh)
+    br_corner = DirichletBC("bottom right corner", data, mesh)
+    tr_corner = NeumannBC("top right corner", data, mesh)
     if post:
         # contrained dof rows of K are saved now
         reaction_dof = dirichlet_dof(left_side)
         K_rows = K[reaction_dof, :]
 
     left_side.impose(K, R)
-    left_corner.impose(K, R)
-    right_side.impose(K, R)
+    br_corner.impose(K, R)
+    tr_corner.impose(R)
     print("K:\n", K)
     print("R:\n", R)
     print()
@@ -82,6 +81,13 @@ def analysis():
     D = np.linalg.solve(K, R)
     print("D:\n", D)
     print()
+    # print(D[2], D[4], D[5])
+    # print()
+    # print(K[2])
+    # print(K[4])
+    # print(K[5])
+
+    return D
 
     if post:
         reactions = np.dot(K_rows, D)
@@ -92,4 +98,7 @@ def analysis():
 
 
 if __name__ == "__main__":
-    analysis()
+    # np.set_printoptions(precision=2)
+    data_path = "../data/test.json"
+    mesh_path = "../gmsh/msh/test.msh"
+    analysis(data_path, mesh_path)

@@ -89,13 +89,13 @@ def stiffness_matrix(e, data, mesh, coordinates, connectivity, material_map, E_m
         j = ( (c[1][0] - c[0][0]) * (c[2][1] - c[0][1])  # det of jacobian matrix
             - (c[2][0] - c[0][0]) * (c[1][1] - c[0][1])
         )
-        # print(j)
+        # print("j",j)
         B = (1/j) * np.array([
             (y(c, 1, 2), 0, y(c, 2, 0), 0, y(c, 0, 1), 0),
             (0, x(c, 2, 1), 0, x(c, 0, 2), 0 , x(c, 1, 0)),
             (x(c, 2, 1), y(c, 1, 2), x(c, 0, 2), y(c, 2, 0), x(c, 1, 0), y(c, 0, 1))
         ])
-        # print(B)
+        print("B", B)
         k_integral = B.T @ E @ B * t * 0.5 * j * w
         k += k_integral
 
@@ -108,7 +108,7 @@ def assembly(e, connectivity, k, K):
     for n in range(element_nodes.shape[0]):  # TODO check if applicable for BC
         element_dofs[n*2] = element_nodes[n] * 2
         element_dofs[n*2+1] = element_nodes[n] * 2 + 1
-    # print(element_dofs)  
+    print("elemnt dof", element_dofs)  
 
     for i in range(6):  # becomes 12 for T6
         I = element_dofs[i]

@@ -23,3 +23,8 @@ def setup_data():
         return data
 
     return _load_data
+
+# TODO forse sarebbe meglio crearsi una fixture che faccia
+# il setup di tutti i dati necessari (gli stessi di fem.py)
+# il problema rimane la scomodita' di dover passare tutti gli
+# argomenti alla funzione di test poi
