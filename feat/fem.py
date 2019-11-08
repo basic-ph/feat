@@ -4,10 +4,10 @@ from pprint import pprint
 import meshio
 import numpy as np
 
-from boundary import DirichletBC, NeumannBC, dirichlet_dof
-from helpers import (assembly, compute_E_matrices, gauss_quadrature,
+from .boundary import DirichletBC, NeumannBC, dirichlet_dof
+from .helpers import (assembly, compute_E_matrices, gauss_quadrature,
                      stiffness_matrix)
-from post_proc import compute_modulus
+from .post_proc import compute_modulus
 
 
 def analysis(data_path, mesh_path): 
@@ -37,8 +37,6 @@ def analysis(data_path, mesh_path):
     # print()
 
     E_matrices = compute_E_matrices(data, mesh)
-    pprint(E_matrices)
-    print()
 
     # arrays init
     K = np.zeros((dof, dof))
@@ -54,7 +52,6 @@ def analysis(data_path, mesh_path):
                     element_material_map,
                     E_matrices
             )
-            print("k:\n",k)
             K = assembly(e, connectivity_table, k, K)
 
     print("K:\n", K)
@@ -81,11 +78,6 @@ def analysis(data_path, mesh_path):
     D = np.linalg.solve(K, R)
     print("D:\n", D)
     print()
-    # print(D[2], D[4], D[5])
-    # print()
-    # print(K[2])
-    # print(K[4])
-    # print(K[5])
 
     return D
 
@@ -98,7 +90,7 @@ def analysis(data_path, mesh_path):
 
 
 if __name__ == "__main__":
-    # np.set_printoptions(precision=2)
+    np.set_printoptions(linewidth=200)
     data_path = "../data/test.json"
     mesh_path = "../gmsh/msh/test.msh"
     analysis(data_path, mesh_path)

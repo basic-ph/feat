@@ -43,8 +43,8 @@ class DirichletBC(BoundaryCondition):
         self.imposed_disp = data["bc"]["dirichlet"][name]["value"]
         self.global_dof_num = self.nodes.shape[0] * self.constrained_dof.shape[0]
         self.global_dof = super(DirichletBC, self).compute_global_dof(self.nodes, self.constrained_dof, self.global_dof_num)
-        print('name', self.name)
-        print('dir glob dof:', self.global_dof)
+        # print('name', self.name)
+        # print('dir glob dof:', self.global_dof)
 
     def impose(self, K, R):
         for d in self.global_dof:
@@ -63,8 +63,8 @@ class NeumannBC(BoundaryCondition):
         self.imposed_load = data["bc"]["neumann"][name]["value"]
         self.global_dof_num = self.nodes.shape[0] * self.constrained_dof.shape[0]
         self.global_dof = super(NeumannBC, self).compute_global_dof(self.nodes, self.constrained_dof, self.global_dof_num)
-        print('name', self.name)
-        print('dir glob dof:', self.global_dof)
+        # print('name', self.name)
+        # print('neu glob dof:', self.global_dof)
         
     def impose(self, R):
         for d in self.global_dof:
