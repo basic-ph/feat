@@ -4,10 +4,10 @@ from pprint import pprint
 import meshio
 import numpy as np
 
-from .boundary import DirichletBC, NeumannBC, dirichlet_dof
-from .helpers import (assembly, compute_E_matrices, gauss_quadrature,
+from boundary import DirichletBC, NeumannBC, dirichlet_dof
+from helpers import (assembly, compute_E_matrices, gauss_quadrature,
                      stiffness_matrix)
-from .post_proc import compute_modulus
+from post_proc import compute_modulus
 
 
 def analysis(data_path, mesh_path): 

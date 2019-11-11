@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 
 from feat.helpers import compute_E_matrices, stiffness_matrix, x, y
+# from feat.helpers import compute_E_matrices, stiffness_matrix, x, y
 
 def test_compute_E_matrices(setup_data, setup_mesh):
     # data = setup_data(base_dir + "data/test_el_0.json")
