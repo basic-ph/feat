@@ -52,7 +52,7 @@ def analysis():
         print("I", I)
         print("J", J)
 
-        K = sparse.csc_matrix(K_flat, (I, J))
+        K = sparse.csc_matrix((K_flat, (I, J)))
 
     sys.exit()
     
