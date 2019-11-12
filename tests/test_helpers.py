@@ -56,9 +56,6 @@ def test_stiffness_matrix(setup_data, setup_mesh, data_file, mesh_file, k_true):
         0,
         data,
         mesh,
-        nodal_coordinates,
-        connectivity_table,
-        element_material_map,
-        E_matrices
+        E_matrices,
     )
     np.testing.assert_allclose(k_true, k)

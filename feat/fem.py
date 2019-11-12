@@ -10,59 +10,37 @@ from helpers import (assembly, compute_E_matrices, gauss_quadrature,
 from post_proc import compute_modulus
 
 
-def analysis(data_path, mesh_path): 
+def analysis(): 
+    
+    # SETTINGS
+    data_path = "../data/test.json"
+    mesh_path = "../gmsh/msh/test.msh"
+    POST = False
+    
     # DATA
     with open(data_path, "r") as data_file:
             data = json.load(data_file)
-
-    element_type = data["element type"]
-    ip_number = data["integration points"]
-    thickness = data["thickness"]
-    post = data["post-processing"]
-
-    # NUMERICAL INTEGRATION
     weights, locations = gauss_quadrature(data)
 
     # MESH
     mesh = meshio.read(mesh_path)
-    nodal_coordinates = mesh.points[:,:2]  # slice is used to remove 3rd coordinate
-    nodes = mesh.points.shape[0]
-    dof = nodes * 2
-    connectivity_table = mesh.cells["triangle"]
-    elements = connectivity_table.shape[0]
-
-    # this array contains material tag for every element in mesh
-    element_material_map = mesh.cell_data["triangle"]["gmsh:physical"]
-    # print(element_material_map)
-    # print()
-
     E_matrices = compute_E_matrices(data, mesh)
 
-    # arrays init
-    K = np.zeros((dof, dof))
-    R = np.zeros(dof)
+    K = np.zeros((mesh.points.shape[0] * 2, mesh.points.shape[0] * 2))
+    R = np.zeros(mesh.points.shape[0] * 2)
 
-    for e in range(elements):
-            k = stiffness_matrix(
-                    e,
-                    data,
-                    mesh,
-                    nodal_coordinates,
-                    connectivity_table,
-                    element_material_map,
-                    E_matrices
-            )
-            K = assembly(e, connectivity_table, k, K)
+    for e in range(mesh.cells["triangle"].shape[0]):  # number of elements
+        K = assembly(e, data, mesh, E_matrices, K)
 
     print("K:\n", K)
     print("R:\n", R)
     print()
 
-
+    # BOUNDARY CONDITIONS INSTANCES
     left_side = DirichletBC("left side", data, mesh)
     br_corner = DirichletBC("bottom right corner", data, mesh)
     tr_corner = NeumannBC("top right corner", data, mesh)
-    if post:
+    if POST:
         # contrained dof rows of K are saved now
         reaction_dof = dirichlet_dof(left_side)
         K_rows = K[reaction_dof, :]
@@ -74,23 +52,21 @@ def analysis(data_path, mesh_path):
     print("R:\n", R)
     print()
 
-    # Solution of the system
+    # SOLVER
     D = np.linalg.solve(K, R)
     print("D:\n", D)
     print()
 
-    return D
-
-    if post:
+    if POST:
         reactions = np.dot(K_rows, D)
         print("reactions:\n", reactions)
         print()
         modulus = compute_modulus(mesh, right_side, reactions, thickness)
         print("modulus:\n", modulus)
+    
+    return D
 
 
 if __name__ == "__main__":
     np.set_printoptions(linewidth=200)
-    data_path = "../data/test.json"
-    mesh_path = "../gmsh/msh/test.msh"
-    analysis(data_path, mesh_path)
+    analysis()

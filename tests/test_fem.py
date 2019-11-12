@@ -6,35 +6,17 @@ from feat.helpers import (assembly, compute_E_matrices, gauss_quadrature,
 from feat.post_proc import compute_modulus
 
 
-def test_script(setup_data, setup_mesh):
+def test_base(setup_data, setup_mesh):
     data = setup_data("data/test.json")
-    element_type = data["element type"]
-    ip_number = data["integration points"]
-    thickness = data["thickness"]
-    post = data["post-processing"]
     weights, locations = gauss_quadrature(data)
     mesh = setup_mesh("gmsh/msh/test.msh")
-    nodal_coordinates = mesh.points[:,:2]  # slice is used to remove 3rd coordinate
-    nodes = mesh.points.shape[0]
-    dof = nodes * 2
-    connectivity_table = mesh.cells["triangle"]
-    elements = connectivity_table.shape[0]
-    element_material_map = mesh.cell_data["triangle"]["gmsh:physical"]
-    E_matrices = compute_E_matrices(data, mesh)
-    K = np.zeros((dof, dof))
-    R = np.zeros(dof)
 
-    for e in range(elements):
-            k = stiffness_matrix(
-                    e,
-                    data,
-                    mesh,
-                    nodal_coordinates,
-                    connectivity_table,
-                    element_material_map,
-                    E_matrices
-            )
-            K = assembly(e, connectivity_table, k, K)
+    E_matrices = compute_E_matrices(data, mesh)
+    K = np.zeros((mesh.points.shape[0] * 2, mesh.points.shape[0] * 2))
+    R = np.zeros(mesh.points.shape[0] * 2)
+
+    for e in range(mesh.cells["triangle"].shape[0]):  # number of elements
+        K = assembly(e, data, mesh, E_matrices, K)
 
     left_side = DirichletBC("left side", data, mesh)
     br_corner = DirichletBC("bottom right corner", data, mesh)

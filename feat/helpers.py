@@ -64,15 +64,15 @@ x = lambda a, i, j: a[i][0] - a[j][0]
 y = lambda b, i, j: b[i][1] - b[j][1]
 
 
-def stiffness_matrix(e, data, mesh, coordinates, connectivity, material_map, E_matrices):
+def stiffness_matrix(e, data, mesh, E_matrices):
 
     t = data["thickness"]
-    element_nodes = connectivity[e]
+    element_nodes = mesh.cells["triangle"][e]
     # print("nodes:\n", element_nodes)
-    c = coordinates[element_nodes]  # element coordinates
+    c = mesh.points[:,:2][element_nodes]
     # print("coord:\n", c)
 
-    element_material = material_map[e]
+    element_material = mesh.cell_data["triangle"]["gmsh:physical"][e]
     E = E_matrices[element_material]["E"]
     # print("E:\n", E)
 
@@ -102,16 +102,22 @@ def stiffness_matrix(e, data, mesh, coordinates, connectivity, material_map, E_m
     return k
 
 
-def assembly(e, connectivity, k, K):
-    element_nodes = connectivity[e]
-    element_dofs = np.zeros(6, dtype=np.int32)  # becomes 12 for T6
+def compute_element_global_dof(e, mesh):
+    element_nodes = mesh.cells["triangle"][e]
+    element_dof = np.zeros(6, dtype=np.int32)  # becomes 12 for T6
     for n in range(element_nodes.shape[0]):  # TODO check if applicable for BC
-        element_dofs[n*2] = element_nodes[n] * 2
-        element_dofs[n*2+1] = element_nodes[n] * 2 + 1
+        element_dof[n*2] = element_nodes[n] * 2
+        element_dof[n*2+1] = element_nodes[n] * 2 + 1
+    return element_dof
+
+
+def assembly(e, data, mesh, E_matrices, K):    
+    k = stiffness_matrix(e, data, mesh, E_matrices)
+    element_dof = compute_element_global_dof(e, mesh)
 
     for i in range(6):  # becomes 12 for T6
-        I = element_dofs[i]
+        I = element_dof[i]
         for j in range(6):  # becomes 12 for T6
-            J = element_dofs[j]
+            J = element_dof[j]
             K[I, J] += k[i, j]
     return K
