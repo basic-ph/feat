@@ -10,12 +10,14 @@ def test_base(setup_data, setup_mesh):
     data = setup_data("data/test.json")
     weights, locations = gauss_quadrature(data)
     mesh = setup_mesh("gmsh/msh/test.msh")
+    elements = mesh.cells["triangle"].shape[0]
+    nodes = mesh.points.shape[0]
 
     E_matrices = compute_E_matrices(data, mesh)
-    K = np.zeros((mesh.points.shape[0] * 2, mesh.points.shape[0] * 2))
-    R = np.zeros(mesh.points.shape[0] * 2)
+    K = np.zeros((nodes * 2, nodes * 2))
+    R = np.zeros(nodes * 2)
 
-    for e in range(mesh.cells["triangle"].shape[0]):  # number of elements
+    for e in range(elements):  # number of elements
         K = assembly(e, data, mesh, E_matrices, K)
 
     left_side = DirichletBC("left side", data, mesh)
