@@ -19,8 +19,8 @@ def analysis():
     data_path = "../data/test.json"
     mesh_path = "../gmsh/msh/test.msh"
     POST = False
-    BASE = False
-    VECTOR = True
+    BASE = True
+    VECTOR = False
     
     # DATA
     with open(data_path, "r") as data_file:
@@ -46,6 +46,7 @@ def analysis():
         K_flat = np.zeros(36 * elements)  # 36 is 6^2 (dofs^2)
         I = np.zeros(36 * elements, dtype=np.int32)  # the 2nd quantity is the number of elements
         J = np.zeros(36 * elements, dtype=np.int32)
+        R = np.zeros(nodes * 2)
         for e in range(elements):  # number of elements
             K_flat, I, J = assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J)
         print("K_flat", K_flat)

@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from feat.helpers import compute_E_matrices, stiffness_matrix, x, y
-# from feat.helpers import compute_E_matrices, stiffness_matrix, x, y
+from feat.helpers import compute_E_matrices, gauss_quadrature, stiffness_matrix
+
 
 def test_compute_E_matrices(setup_data, setup_mesh):
     # data = setup_data(base_dir + "data/test_el_0.json")
@@ -21,41 +21,33 @@ def test_compute_E_matrices(setup_data, setup_mesh):
     np.testing.assert_allclose(E_true, E_matrices[4]["E"])
 
 
-k_true = np.array([
-    (9833333.33333333, -0.5e7, -0.45e7, 0.2e7, -5333333.33333333, 0.3e7),
-    (-0.5e7, 1.4e7, 0.3e7, -1.2e7, 0.2e7, -0.2e7),
-    (-0.45e7, 0.3e7, 0.45e7, 0.0, 0.0, -0.3e7),
-    (0.2e7, -1.2e7, 0.0, 1.2e7, -0.2e7, 0.0),
-    (-5333333.33333333, 0.2e7, 0.0, -0.2e7, 5333333.33333333, 0.0),
-    (0.3e7, -0.2e7, -0.3e7, 0.0, 0.0, 0.2e7),
-])
-test_data = [
-    (
-        "data/test_el_0.json",
-        "gmsh/msh/test_el_0.msh",
-        k_true,
-    ),
-    (
-        "data/test_el_1.json",
-        "gmsh/msh/test_el_1.msh",
-        k_true,
-    )
-]
-
-
-@pytest.mark.parametrize("data_file,mesh_file,k_true", test_data)
-def test_stiffness_matrix(setup_data, setup_mesh, data_file, mesh_file, k_true):
-    data = setup_data(data_file)
-    mesh = setup_mesh(mesh_file)
-    nodal_coordinates = mesh.points[:,:2]
-    connectivity_table = mesh.cells["triangle"]
-    element_material_map = mesh.cell_data["triangle"]["gmsh:physical"]
+def test_stiffness_matrix(setup_data, setup_mesh):
+    data = setup_data("data/test.json")
+    weights, locations = gauss_quadrature(data)
+    mesh = setup_mesh("gmsh/msh/test.msh")
+    elements = mesh.cells["triangle"].shape[0]
+    nodes = mesh.points.shape[0]
     E_matrices = compute_E_matrices(data, mesh)
 
-    k = stiffness_matrix(
-        0,
-        data,
-        mesh,
-        E_matrices,
-    )
-    np.testing.assert_allclose(k_true, k)
+    k_0 = stiffness_matrix(0, data, mesh, E_matrices)
+    k_1 = stiffness_matrix(1, data, mesh, E_matrices)
+
+    k_0_true = np.array([
+        (5333333.33333333, 0.0, -5333333.33333333, 2000000., 0., -2000000.),
+        (0., 2000000., 3000000., -2000000., -3000000., 0.),
+        (-5333333.33333333, 3000000., 9833333.33333333, -5000000., -4500000., 2000000.),
+        (2000000.,-2000000., -5000000., 14000000., 3000000., -12000000.),
+        (0., -3000000., -4500000., 3000000., 4500000., 0.),
+        (-2000000., 0., 2000000., -12000000., 0., 12000000.),
+    ])
+    k_1_true = np.array([
+        (4500000., 0., 0., -3000000., -4500000., 3000000.),
+        (0., 12000000., -2000000., 0., 2000000., -12000000.),
+        (0., -2000000., 5333333.33333333, 0., -5333333.33333333, 2000000.),
+        (-3000000., 0., 0., 2000000., 3000000., -2000000.),
+        (-4500000., 2000000., -5333333.33333333, 3000000., 9833333.33333333, -5000000.),
+        (3000000., -12000000., 2000000., -2000000., -5000000., 14000000.),
+    ])
+
+    np.testing.assert_allclose(k_0_true, k_0)
+    np.testing.assert_allclose(k_1_true, k_1)

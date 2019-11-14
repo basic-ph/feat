@@ -46,13 +46,16 @@ class DirichletBC(BoundaryCondition):
         # print('name', self.name)
         # print('dir glob dof:', self.global_dof)
 
-    def impose(self, K, R):
-        for d in self.global_dof:
-            R -= self.imposed_disp * K[:, d]  # modify RHS
-            K[:, d] = 0.0  # zero-out column
-            K[d, :] = 0.0  # zero-out row
-            K[d, d] = 1.0  # set diagonal to 1
-            R[d] = self.imposed_disp  # enforce value
+    def impose(self, K, R, matrix="full"):
+        if matrix == "full":
+            for d in self.global_dof:
+                R -= self.imposed_disp * K[:, d]  # modify RHS
+                K[:, d] = 0.0  # zero-out column
+                K[d, :] = 0.0  # zero-out row
+                K[d, d] = 1.0  # set diagonal to 1
+                R[d] = self.imposed_disp  # enforce value
+        elif matrix == "sparse":
+            pass
 
 
 class NeumannBC(BoundaryCondition):
@@ -66,8 +69,11 @@ class NeumannBC(BoundaryCondition):
         # print('name', self.name)
         # print('neu glob dof:', self.global_dof)
         
-    def impose(self, R):
-        for d in self.global_dof:
-            # nodal load = total load / number of nodes in this boundary
-            self.nodal_load = self.imposed_load / self.nodes.shape[0]
-            R[d] += self.nodal_load
+    def impose(self, R, matrix="full"):
+        if matrix == "full":
+            for d in self.global_dof:
+                # nodal load = total load / number of nodes in this boundary
+                self.nodal_load = self.imposed_load / self.nodes.shape[0]
+                R[d] += self.nodal_load
+        elif matrix == "sparse":
+            pass
