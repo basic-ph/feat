@@ -1,5 +1,5 @@
 import numpy as np
-from helpers import stiffness_matrix, compute_element_global_dof
+from helpers import stiffness_matrix, compute_global_dof
 
 
 def assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J):
@@ -11,7 +11,7 @@ def assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J):
     K_loc = np.ravel(k, order="F")
 
     # I_loc: global row indices -- J_loc: global column indices
-    element_dof = compute_element_global_dof(e, mesh)
+    element_dof = compute_global_dof(e, mesh)
     
     I_loc = np.tile(element_dof, 6)  # reps is the number of dof in each element
     J_loc = np.repeat(element_dof, 6)  # repeats is again the number of dof ^^
@@ -25,7 +25,7 @@ def assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J):
     return K_flat, I, J
 
 
-def compute_element_global_dof_vect(mesh):
+def compute_global_dof_vect(mesh):
     nodes = mesh.points.shape[0]
     elements = mesh.cells["triangle"]
     print(elements)

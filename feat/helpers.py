@@ -102,7 +102,7 @@ def stiffness_matrix(e, data, mesh, E_matrices):
     return k
 
 
-def compute_element_global_dof(e, mesh):
+def compute_global_dof(e, mesh):
     element_nodes = mesh.cells["triangle"][e]
     element_dof = np.zeros(6, dtype=np.int32)  # becomes 12 for T6
     for n in range(element_nodes.shape[0]):  # TODO check if applicable for BC
@@ -113,7 +113,7 @@ def compute_element_global_dof(e, mesh):
 
 def assembly(e, data, mesh, E_matrices, K):    
     k = stiffness_matrix(e, data, mesh, E_matrices)
-    element_dof = compute_element_global_dof(e, mesh)
+    element_dof = compute_global_dof(e, mesh)
 
     for i in range(6):  # becomes 12 for T6
         I = element_dof[i]

@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, "/home/basic-ph/thesis/feat/feat/")
 from feat.helpers import compute_E_matrices, gauss_quadrature
-from feat.vector import assembly_opt_v1, compute_element_global_dof_vect
+from feat.vector import assembly_opt_v1, compute_global_dof_vect
 
 
 def test_assembly_opt_v1(setup_data, setup_mesh):
@@ -57,9 +57,10 @@ def test_assembly_opt_v1(setup_data, setup_mesh):
     np.testing.assert_allclose(J_true, J)
 
 
+@pytest.mark.skip(reason="not ready")
 def test_1(setup_mesh):
     mesh = setup_mesh("gmsh/msh/test.msh")
 
-    element_dof = compute_element_global_dof_vect(mesh)
+    element_dof = compute_global_dof_vect(mesh)
 
     assert False
