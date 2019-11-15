@@ -67,9 +67,9 @@ y = lambda b, i, j: b[i][1] - b[j][1]
 def stiffness_matrix(e, data, mesh, E_matrices):
 
     t = data["thickness"]
-    element_nodes = mesh.cells["triangle"][e]
-    # print("nodes:\n", element_nodes)
-    c = mesh.points[:,:2][element_nodes]
+    element = mesh.cells["triangle"][e]
+    # print("nodes:\n", element)
+    c = mesh.points[:,:2][element]
     # print("coord:\n", c)
 
     element_material = mesh.cell_data["triangle"]["gmsh:physical"][e]
@@ -103,11 +103,11 @@ def stiffness_matrix(e, data, mesh, E_matrices):
 
 
 def compute_global_dof(e, mesh):
-    element_nodes = mesh.cells["triangle"][e]
+    element = mesh.cells["triangle"][e]
     element_dof = np.zeros(6, dtype=np.int32)  # becomes 12 for T6
-    for n in range(element_nodes.shape[0]):  # TODO check if applicable for BC
-        element_dof[n*2] = element_nodes[n] * 2
-        element_dof[n*2+1] = element_nodes[n] * 2 + 1
+    for n in range(element.shape[0]):  # TODO check if applicable for BC
+        element_dof[n*2] = element[n] * 2
+        element_dof[n*2+1] = element[n] * 2 + 1
     return element_dof
 
 

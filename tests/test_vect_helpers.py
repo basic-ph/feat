@@ -5,7 +5,7 @@ import pytest
 
 sys.path.insert(0, "/home/basic-ph/thesis/feat/feat/")
 from feat.helpers import compute_E_matrices, gauss_quadrature
-from feat.vector import assembly_opt_v1, compute_global_dof_vect
+from feat.vect_helpers import assembly_opt_v1, vect_compute_global_dof, vect_stiffness_matrix
 
 
 def test_assembly_opt_v1(setup_data, setup_mesh):
@@ -57,10 +57,22 @@ def test_assembly_opt_v1(setup_data, setup_mesh):
     np.testing.assert_allclose(J_true, J)
 
 
-@pytest.mark.skip(reason="not ready")
-def test_1(setup_mesh):
+def test_vect_stiffness_matrix(setup_data, setup_mesh):
+    data = setup_data("data/test.json")
+    mesh = setup_mesh("gmsh/msh/test.msh")
+    E_matrices = compute_E_matrices(data, mesh)
+
+    k = vect_stiffness_matrix(data, mesh, E_matrices)
+    assert False
+
+
+def test_vect_compute_global_dof(setup_mesh):
     mesh = setup_mesh("gmsh/msh/test.msh")
 
-    element_dof = compute_global_dof_vect(mesh)
+    element_dof = vect_compute_global_dof(mesh)
 
-    assert False
+    element_dof_true = np.array([
+        (0, 1, 2, 3, 4, 5),
+        (0, 1, 4, 5, 6 ,7),
+    ])
+    np.testing.assert_allclose(element_dof_true, element_dof)

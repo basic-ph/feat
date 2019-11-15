@@ -1,6 +1,6 @@
 import json
 import sys
-from pprint import pprint
+import time
 
 import meshio
 import numpy as np
@@ -10,7 +10,7 @@ from boundary import DirichletBC, NeumannBC, dirichlet_dof
 from helpers import (assembly, compute_E_matrices, gauss_quadrature,
                      stiffness_matrix)
 from post_proc import compute_modulus
-from vector import assembly_opt_v1
+from vect_helpers import assembly_opt_v1
 
 
 def analysis(): 
@@ -55,7 +55,7 @@ def analysis():
 
         K = sparse.csc_matrix((K_flat, (I, J)))
 
-    sys.exit()
+    # sys.exit()
     
     
     # BOUNDARY CONDITIONS INSTANCES
@@ -91,4 +91,6 @@ def analysis():
 
 if __name__ == "__main__":
     np.set_printoptions(linewidth=200)
+    start_time = time.time()
     analysis()
+    print(f"--- {time.time() - start_time} seconds ---")

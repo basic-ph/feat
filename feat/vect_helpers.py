@@ -25,17 +25,21 @@ def assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J):
     return K_flat, I, J
 
 
-def compute_global_dof_vect(mesh):
+def vect_stiffness_matrix(data, mesh, E_matrices):
+    
+    t = data["thickness"]
+    elements = mesh.cells["triangle"]
+    c = mesh.points[:,:2]  # x, y coordinates
+    print(elements)
+    print(c)
+    return 0
+
+
+def vect_compute_global_dof(mesh):
     nodes = mesh.points.shape[0]
     elements = mesh.cells["triangle"]
-    print(elements)
-    print()
-    elements_dof = np.zeros((elements.shape[0], 6), dtype=np.int32)  # becomes 12 for T6
-    print(elements_dof)
-    print()
-
+    elements_dof = np.zeros((elements.shape[0], 6), dtype=np.int32)
     for n in range(3):  # 3 is the number of nodes
         elements_dof[:, n*2] = elements[:, n] * 2
         elements_dof[:, n*2+1] = elements[:, n] * 2 + 1
-    print(elements_dof)
     return elements_dof
