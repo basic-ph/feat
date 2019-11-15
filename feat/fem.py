@@ -29,25 +29,25 @@ def analysis():
 
     # MESH
     mesh = meshio.read(mesh_path)
-    elements = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells["triangle"].shape[0]
     nodes = mesh.points.shape[0]
     E_matrices = compute_E_matrices(data, mesh)
 
     if BASE:
         K = np.zeros((nodes * 2, nodes * 2))
         R = np.zeros(nodes * 2)
-        for e in range(elements):  # number of elements
+        for e in range(elements_num):  # number of elements_num
             K = assembly(e, data, mesh, E_matrices, K)
         print("K:\n", K)
         print("R:\n", R)
         print()
     elif VECTOR:
         # init global arrays
-        K_flat = np.zeros(36 * elements)  # 36 is 6^2 (dofs^2)
-        I = np.zeros(36 * elements, dtype=np.int32)  # the 2nd quantity is the number of elements
-        J = np.zeros(36 * elements, dtype=np.int32)
+        K_flat = np.zeros(36 * elements_num)  # 36 is 6^2 (dofs^2)
+        I = np.zeros(36 * elements_num, dtype=np.int32)  # the 2nd quantity is the number of elements_num
+        J = np.zeros(36 * elements_num, dtype=np.int32)
         R = np.zeros(nodes * 2)
-        for e in range(elements):  # number of elements
+        for e in range(elements_num):  # number of elements_num
             K_flat, I, J = assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J)
         print("K_flat", K_flat)
         print("I", I)

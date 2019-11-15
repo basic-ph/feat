@@ -23,3 +23,19 @@ def assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J):
     J[start:end] = J_loc
     
     return K_flat, I, J
+
+
+def compute_element_global_dof_vect(mesh):
+    nodes = mesh.points.shape[0]
+    elements = mesh.cells["triangle"]
+    print(elements)
+    print()
+    elements_dof = np.zeros((elements.shape[0], 6), dtype=np.int32)  # becomes 12 for T6
+    print(elements_dof)
+    print()
+
+    for n in range(3):  # 3 is the number of nodes
+        elements_dof[:, n*2] = elements[:, n] * 2
+        elements_dof[:, n*2+1] = elements[:, n] * 2 + 1
+    print(elements_dof)
+    return elements_dof
