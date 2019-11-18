@@ -1,9 +1,12 @@
 # -*- coding: utf-8 -*-
 
 import json
+import sys
 
 import meshio
 import pytest
+
+sys.path.insert(0, "/home/basic-ph/thesis/feat/feat/")
 
 
 @pytest.fixture

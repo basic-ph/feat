@@ -1,9 +1,7 @@
-import sys
 
 import numpy as np
 import pytest
 
-sys.path.insert(0, "/home/basic-ph/thesis/feat/feat/")
 from feat.helpers import compute_E_matrices, gauss_quadrature
 from feat.vect_helpers import assembly_opt_v1, vect_compute_global_dof, vect_stiffness_matrix
 
