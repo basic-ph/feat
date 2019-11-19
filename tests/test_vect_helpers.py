@@ -3,7 +3,8 @@ import numpy as np
 import pytest
 
 from feat.helpers import compute_E_matrices, gauss_quadrature
-from feat.vect_helpers import assembly_opt_v1, vect_compute_global_dof, vect_stiffness_matrix
+from feat.vect_helpers import (assembly_opt_v1, vect_compute_global_dof,
+                               vect_stiffness_matrix, vect_compute_E)
 
 
 def test_assembly_opt_v1(setup_data, setup_mesh):
@@ -55,13 +56,29 @@ def test_assembly_opt_v1(setup_data, setup_mesh):
     np.testing.assert_allclose(J_true, J)
 
 
+def test_compute_E_vect(setup_data, setup_mesh):
+    data = setup_data("data/test_mat.json")
+    mesh = setup_mesh("gmsh/msh/test_mat.msh")
+    elements_num = mesh.cells["triangle"].shape[0]
+
+    E_array = vect_compute_E(data, mesh, elements_num)
+    print(E_array)
+    E_array_true = np.array([
+        (32000000., 8000000., 0., 32000000., 0., 12000000.),
+        (11396011.3960114, 3988603.98860399, 0., 11396011.3960114, 0., 3703703.7037037),
+    ])
+    np.testing.assert_allclose(E_array_true, E_array)
+
+
 @pytest.mark.skip
 def test_vect_stiffness_matrix(setup_data, setup_mesh):
     data = setup_data("data/test.json")
     mesh = setup_mesh("gmsh/msh/test.msh")
-    E_matrices = compute_E_matrices(data, mesh)
+    elements_num = mesh.cells["triangle"].shape[0]
 
-    k = vect_stiffness_matrix(data, mesh, E_matrices)
+    E_array = vect_compute_E(data, mesh, elements_num)
+
+    k = vect_stiffness_matrix(data, mesh, E_array)
     assert False
 
 

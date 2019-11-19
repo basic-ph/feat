@@ -25,13 +25,62 @@ def assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J):
     return K_flat, I, J
 
 
-def vect_stiffness_matrix(data, mesh, E_matrices):
+def vect_compute_E(data, mesh, elements_num):
+    condition = data["load condition"]
+    materials_num = len(data["materials"].keys())
+
+    E_mat = np.zeros((materials_num, 6)) # pre-computed array for each material
+
+    for key,value in data["materials"].items():
+        # key is the material name
+        # value is the dict with young's modulus and poisson's ratio
+        physical_tag = mesh.field_data[key][0]
+        
+        poisson = value["poisson's ratio"]
+        young = value["young's modulus"]
+
+        if condition == "plane strain":
+            E = np.array([
+                young * (1 - poisson) / ((1 + poisson) * (1 - 2*poisson)),
+                young * poisson / ((1 + poisson) * (1 - 2*poisson)),
+                0.0,
+                young * (1 - poisson) / ((1 + poisson) * (1 - 2*poisson)),
+                0.0,
+                young * (1 - poisson) / (2 * (1 + poisson) * (1 - 2*poisson)),
+            ])
+        elif condition == "plane stress":
+            E = np.array([
+                young / (1 - poisson**2),
+                young * poisson / (1 - poisson**2),
+                0.0,
+                young / (1 - poisson**2),
+                0.0,
+                young * (1 - poisson) / (2 * (1 - poisson**2)),
+            ])
+        E_mat[physical_tag-1,:] = E
+    
+    E_array = np.zeros((elements_num, 6))
+    mat_map = mesh.cell_data["triangle"]["gmsh:physical"] - 1  # element-material map
+    E_array = E_mat[mat_map,:]
+
+    return E_array
+
+
+x = lambda a, i, j: a[i][0] - a[j][0]
+y = lambda b, i, j: b[i][1] - b[j][1]
+
+
+
+def vect_stiffness_matrix(data, mesh, E_array):
     
     t = data["thickness"]
     elements = mesh.cells["triangle"]
     c = mesh.points[:,:2]  # x, y coordinates
     print(elements)
     print(c)
+    print(E_array)
+
+    print(c[elements[:,1]])
     return 0
 
 
