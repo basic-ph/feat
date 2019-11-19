@@ -66,21 +66,27 @@ def vect_compute_E(data, mesh, elements_num):
     return E_array
 
 
-x = lambda a, i, j: a[i][0] - a[j][0]
-y = lambda b, i, j: b[i][1] - b[j][1]
-
+x = lambda c, e, i, j: c[e[:,i]][:,0] - c[e[:,j]][:,0]
+y = lambda c, e, i, j: c[e[:,i]][:,1] - c[e[:,j]][:,1]
 
 
 def vect_stiffness_matrix(data, mesh, E_array):
     
     t = data["thickness"]
-    elements = mesh.cells["triangle"]
+    e = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
     c = mesh.points[:,:2]  # x, y coordinates
-    print(elements)
+    print(e)
     print(c)
-    print(E_array)
+    # print(E_array)
+    test = y(c, e, 1, 2)
+    test_ = x(c, e, 2, 1)
+    print(test)
+    print(test_)
 
-    print(c[elements[:,1]])
+    J = x(c,e,1,0) * y(c,e,2,0) - x(c,e,2,0) * y(c,e,1,0)
+    K11 = ((y(c,e,1,2)**2 * E_array[:,0]) / (J**2) + (x(c,e,2,1)**2 * E_array[:,5]) / (J**2)) * t * 0.5 * J
+    print(J)
+    print("K11", K11)
     return 0
 
 

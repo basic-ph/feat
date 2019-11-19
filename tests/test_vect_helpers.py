@@ -70,7 +70,7 @@ def test_compute_E_vect(setup_data, setup_mesh):
     np.testing.assert_allclose(E_array_true, E_array)
 
 
-@pytest.mark.skip
+# @pytest.mark.skip
 def test_vect_stiffness_matrix(setup_data, setup_mesh):
     data = setup_data("data/test.json")
     mesh = setup_mesh("gmsh/msh/test.msh")
