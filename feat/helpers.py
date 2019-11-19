@@ -6,7 +6,8 @@ from numpy.linalg import det, inv
 
 def compute_E_matrices(data, mesh):
     condition = data["load condition"]
-    E_matrices = {}
+    materials_num = len(data["materials"].keys())
+    E_matrices = np.zeros((materials_num,3,3))  # first dim is number of materials
 
     for key,value in data["materials"].items():
         # key is the material name
@@ -33,9 +34,7 @@ def compute_E_matrices(data, mesh):
             ])
             E = coeff * matrix
 
-        E_matrices[physical_tag] = {}
-        E_matrices[physical_tag]["name"] = key
-        E_matrices[physical_tag]["E"] = E
+        E_matrices[physical_tag-1,:,:] = E
 
     return E_matrices
 
@@ -73,7 +72,7 @@ def stiffness_matrix(e, data, mesh, E_matrices):
     # print("coord:\n", c)
 
     element_material = mesh.cell_data["triangle"]["gmsh:physical"][e]
-    E = E_matrices[element_material]["E"]
+    E = E_matrices[element_material-1]
     # print("E:\n", E)
 
     # element/local stiffness matrix

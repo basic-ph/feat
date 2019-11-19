@@ -2,11 +2,12 @@ $MeshFormat
 4.1 0 8
 $EndMeshFormat
 $PhysicalNames
-4
+5
 0 7 "bottom right corner"
 0 8 "top right corner"
 1 6 "left side"
 2 1 "steel"
+2 2 "aluminum"
 $EndPhysicalNames
 $Entities
 4 5 2 0
@@ -20,7 +21,7 @@ $Entities
 4 0 0 0 0 2 0 1 6 2 4 -1 
 5 0 0 0 3 2 0 0 2 3 -1 
 1 0 0 0 3 2 0 1 1 3 1 2 5 
-2 0 0 0 3 2 0 1 1 3 -5 3 4 
+2 0 0 0 3 2 0 1 2 3 -5 3 4 
 $EndEntities
 $Nodes
 7 4 1 4

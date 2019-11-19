@@ -32,6 +32,7 @@ def analysis():
     elements_num = mesh.cells["triangle"].shape[0]
     nodes = mesh.points.shape[0]
     E_matrices = compute_E_matrices(data, mesh)
+    print(E_matrices)
 
     if BASE:
         K = np.zeros((nodes * 2, nodes * 2))

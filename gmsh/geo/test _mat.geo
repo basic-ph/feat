@@ -17,10 +17,11 @@ Curve Loop(2) = {-5, 3, 4};
 Plane Surface(1) = {1};
 Plane Surface(2) = {2};
 
-Physical Surface("steel", 1) = {1, 2};  // material
+Physical Surface("steel", 1) = {1};  // material
+Physical Surface("aluminum", 2) = {2};  // material
 Physical Curve("left side", newreg) = {4}; // dirichlet
 Physical Point("bottom right corner", newreg) = {2}; // dirichlet
 Physical Point("top right corner", newreg) = {3}; // neumann
 
 Mesh 2;
-Save "../msh/test.msh";
+Save "../msh/test_mat.msh";

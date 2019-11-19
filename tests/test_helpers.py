@@ -5,20 +5,17 @@ from feat.helpers import compute_E_matrices, gauss_quadrature, stiffness_matrix
 
 
 def test_compute_E_matrices(setup_data, setup_mesh):
-    # data = setup_data(base_dir + "data/test_el_0.json")
-    # mesh = setup_mesh(base_dir + "gmsh/msh/test_el_0.msh")
-    data = setup_data(r"data/test_el_0.json")
-    mesh = setup_mesh(r"gmsh/msh/test_el_0.msh")
+    data = setup_data(r"data/test_mat.json")
+    mesh = setup_mesh(r"gmsh/msh/test_mat.msh")
 
     E_matrices = compute_E_matrices(data, mesh)
-    E_true = np.array([
+    E_steel = np.array([
         (3.2e7, 8e6, 0.0),
         (8e6, 3.2e7, 0.0),
         (0.0, 0.0, 1.2e7),
     ])
-
-    assert E_matrices[4]["name"] == "steel"
-    np.testing.assert_allclose(E_true, E_matrices[4]["E"])
+    # TODO add aluminum matrix testing
+    np.testing.assert_allclose(E_steel, E_matrices[0])
 
 
 def test_stiffness_matrix(setup_data, setup_mesh):
