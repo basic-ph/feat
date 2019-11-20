@@ -78,7 +78,8 @@ def test_vect_stiffness_matrix(setup_data, setup_mesh):
 
     E_array = vect_compute_E(data, mesh, elements_num)
 
-    k = vect_stiffness_matrix(data, mesh, E_array)
+    K_array = vect_stiffness_matrix(data, mesh, E_array)
+    print(K_arrays)
     assert False
 
 

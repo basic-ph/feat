@@ -73,6 +73,7 @@ y = lambda c, e, i, j: c[e[:,i]][:,1] - c[e[:,j]][:,1]
 def vect_stiffness_matrix(data, mesh, E_array):
     
     t = data["thickness"]
+    elements_num = mesh.cells["triangle"].shape[0]
     e = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
     c = mesh.points[:,:2]  # x, y coordinates
     print(e)
@@ -103,7 +104,7 @@ def vect_stiffness_matrix(data, mesh, E_array):
     K35 = (y(c,e,2,0) * y(c,e,0,1) * E_array[:,0] + x(c,e,0,2) * x(c,e,1,0) * E_array[:,5]) / (J**2) * t * 0.5 * J
     K36 = (y(c,e,2,0) * x(c,e,1,0) * E_array[:,1] + x(c,e,0,2) * y(c,e,0,1) * E_array[:,5]) / (J**2) * t * 0.5 * J
     
-    K44 = (x(c,e,0,2)**2 * E_array[:,3] + y(c,e,2,0)**2 * E_array{:,5}) / (J**2) * t * 0.5 * J
+    K44 = (x(c,e,0,2)**2 * E_array[:,3] + y(c,e,2,0)**2 * E_array[:,5]) / (J**2) * t * 0.5 * J
     K45 = (x(c,e,0,2) * y(c,e,0,1) * E_array[:,1] + y(c,e,2,0) * x(c,e,1,0) * E_array[:,5]) / (J**2) * t * 0.5 * J
     K46 = (x(c,e,0,2) * x(c,e,1,0) * E_array[:,3] + y(c,e,2,0) * y(c,e,0,1) * E_array[:,5]) / (J**2) * t * 0.5 * J
     
@@ -112,7 +113,17 @@ def vect_stiffness_matrix(data, mesh, E_array):
     
     K66 = (x(c,e,1,0)**2 * E_array[:,3] + y(c,e,0,1)**2 * E_array[:,5]) / (J**2) * t * 0.5 * J
 
-    return 0
+    K_array = np.zeros((36, elements_num))
+    K_array = np.stack((
+        K11, K12, K13, K14, K15, K16,
+        K12, K22, K23, K24, K25, K26,
+        K13, K23, K33, K34, K35, K36,
+        K14, K24, K34, K44, K45, K46,
+        K15, K25, K35, K45, K55, K56,
+        K16, K26, K36, K46, K56, K66,
+    ))
+
+    return K_array
 
 
 def vect_compute_global_dof(mesh):
