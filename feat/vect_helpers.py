@@ -84,9 +84,34 @@ def vect_stiffness_matrix(data, mesh, E_array):
     print(test_)
 
     J = x(c,e,1,0) * y(c,e,2,0) - x(c,e,2,0) * y(c,e,1,0)
+
     K11 = ((y(c,e,1,2)**2 * E_array[:,0]) / (J**2) + (x(c,e,2,1)**2 * E_array[:,5]) / (J**2)) * t * 0.5 * J
-    print(J)
-    print("K11", K11)
+    K12 = (y(c,e,1,2) * x(c,e,2,1) / J**2) * (E_array[:,1] + E_array[:,5]) * t * 0.5 * J
+    K13 = (y(c,e,1,2) * y(c,e,2,0) * E_array[:,0] + x(c,e,2,1) * x(c,e,0,2) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K14 = (y(c,e,1,2) * x(c,e,0,2) * E_array[:,1] + y(c,e,2,0) * x(c,e,2,1) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K15 = (y(c,e,1,2) * y(c,e,0,1) * E_array[:,0] + x(c,e,2,1) * x(c,e,1,0) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K16 = (y(c,e,1,2) * x(c,e,1,0) * E_array[:,1] + x(c,e,2,1) * y(c,e,0,1) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    
+    K22 = (x(c,e,2,1)**2 * E_array[:,3] + y(c,e,1,2)**2 * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K23 = (x(c,e,2,1) * y(c,e,2,0) * E_array[:,1] + y(c,e,1,2) * x(c,e,0,2) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K24 = (x(c,e,2,1) * x(c,e,0,2) * E_array[:,3] + y(c,e,1,2) * y(c,e,2,0) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K25 = (x(c,e,2,1) * y(c,e,0,1) * E_array[:,1] + y(c,e,1,2) * x(c,e,1,0) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K26 = (x(c,e,2,1) * x(c,e,1,0) * E_array[:,3] + y(c,e,1,2) * y(c,e,0,1) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    
+    K33 = (y(c,e,2,0)**2 * E_array[:,0] + x(c,e,0,2)**2 * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K34 = (y(c,e,2,0) * x(c,e,0,2) * E_array[:,1] + x(c,e,0,2) * y(c,e,2,0) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K35 = (y(c,e,2,0) * y(c,e,0,1) * E_array[:,0] + x(c,e,0,2) * x(c,e,1,0) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K36 = (y(c,e,2,0) * x(c,e,1,0) * E_array[:,1] + x(c,e,0,2) * y(c,e,0,1) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    
+    K44 = (x(c,e,0,2)**2 * E_array[:,3] + y(c,e,2,0)**2 * E_array{:,5}) / (J**2) * t * 0.5 * J
+    K45 = (x(c,e,0,2) * y(c,e,0,1) * E_array[:,1] + y(c,e,2,0) * x(c,e,1,0) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K46 = (x(c,e,0,2) * x(c,e,1,0) * E_array[:,3] + y(c,e,2,0) * y(c,e,0,1) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    
+    K55 = (y(c,e,0,1)**2 * E_array[:,0] + x(c,e,1,0)**2 * E_array[:,5]) / (J**2) * t * 0.5 * J
+    K56 = (y(c,e,0,1) * x(c,e,1,0) * E_array[:,1] + x(c,e,1,0) * y(c,e,0,1) * E_array[:,5]) / (J**2) * t * 0.5 * J
+    
+    K66 = (x(c,e,1,0)**2 * E_array[:,3] + y(c,e,0,1)**2 * E_array[:,5]) / (J**2) * t * 0.5 * J
+
     return 0
 
 
