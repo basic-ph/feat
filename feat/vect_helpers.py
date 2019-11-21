@@ -115,6 +115,31 @@ def vect_stiffness_matrix(data, mesh, E_array):
     return K_array
 
 
+def compute_K_entry(l, data, mesh, E_array):
+
+    t = data["thickness"]
+    e = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
+    c = mesh.points[:,:2]  # x, y coordinates
+
+    J = x(c,e,1,0) * y(c,e,2,0) - x(c,e,2,0) * y(c,e,1,0)
+
+    row, col = np.unravel_index(l, (6,6))
+
+    b_0 = [y(c,e,1,2), x(c,e,2,1), y(c,e,2,0), x(c,e,0,2), y(c,e,0,1), x(c,e,1,0)]
+    b_1 = [x(c,e,2,1), y(c,e,1,2), x(c,e,0,2), y(c,e,2,0), x(c,e,1,0), y(c,e,0,1)]
+    E_indices = np.array([(0, 1, 0, 1, 0, 1), (1, 3, 1, 3, 1, 3)])
+    
+    if (row % 2 == 0):
+        print(f"{row} is even")
+        E = E_array[:, E_indices[0, col]]
+    else:
+        print(f"{row} is odd")
+        E = E_array[:, E_indices[1, col]]
+
+    k = (b_0[row] * b_0[col] * E + b_1[row] * b_1[col] * E_array[:,5]) / (J**2) * t * 0.5 * J
+    return k
+
+
 def vect_compute_global_dof(mesh):
     nodes = mesh.points.shape[0]
     elements = mesh.cells["triangle"]
