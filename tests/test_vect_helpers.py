@@ -3,9 +3,9 @@ import numpy as np
 import pytest
 
 from feat.helpers import compute_E_matrices, gauss_quadrature
-from feat.vect_helpers import (assembly_opt_v1, compute_K_entry,
-                               vect_compute_E, vect_compute_global_dof,
-                               vect_stiffness_matrix, x, y)
+from feat.vect_helpers import (assembly_opt_v1, vect_compute_E,
+                               vect_compute_global_dof, vect_compute_K_entry,
+                               vect_stiffness_matrix)
 
 
 def test_assembly_opt_v1(setup_data, setup_mesh):
@@ -22,7 +22,6 @@ def test_assembly_opt_v1(setup_data, setup_mesh):
     # testing only with element 1 (the 2nd)
     for e in range(elements):  # number of elements
         K_flat, I, J = assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J)
-    print(K_flat)
 
     I_true = np.array([
         0, 1, 2, 3, 4, 5,
@@ -114,12 +113,15 @@ def test_vect_compute_K_entry(setup_data, setup_mesh):
     E_array = vect_compute_E(data, mesh, elements_num)
 
 
-    k_0 = compute_K_entry(0, c, e, E_array, t)
-    k_35 = compute_K_entry(35, c, e, E_array, t)
+    k_0 = vect_compute_K_entry(0, c, e, E_array, t)
+    k_35 = vect_compute_K_entry(35, c, e, E_array, t)
 
     k_0_true = np.array([5333333.33333333, 4500000.])
     k_35_true = np.array([12000000., 14000000.])
 
+    print(k_0)
+    print()
+    print(k_0_true)
     np.testing.assert_allclose(k_0_true, k_0)
     np.testing.assert_allclose(k_35_true, k_35)
 
