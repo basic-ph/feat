@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 
 import json
+import os
 import sys
 
 import meshio
 import pytest
 
-sys.path.insert(0, "/home/basic-ph/thesis/feat/feat/")
-
+project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(project_root, "feat"))
 
 @pytest.fixture
 def setup_mesh():
