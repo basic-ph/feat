@@ -100,37 +100,14 @@ def vect_stiffness_matrix(data, mesh, E_array):
     c = mesh.points[:,:2]  # x, y coordinates
     K_array = np.zeros((36, elements_num))
 
-    K_array[0] = vect_compute_K_entry(0, c, e, E_array, t)
-    K_array[1] = vect_compute_K_entry(1, c, e, E_array, t)
-    K_array[2] = vect_compute_K_entry(2, c, e, E_array, t)
-    K_array[3] = vect_compute_K_entry(3, c, e, E_array, t)
-    K_array[4] = vect_compute_K_entry(4, c, e, E_array, t)
-    K_array[5] = vect_compute_K_entry(5, c, e, E_array, t)
-    
-    K_array[7] = vect_compute_K_entry(7, c, e, E_array, t)
-    K_array[8] = vect_compute_K_entry(8, c, e, E_array, t)
-    K_array[9] = vect_compute_K_entry(9, c, e, E_array, t)
-    K_array[10] = vect_compute_K_entry(10, c, e, E_array, t)
-    K_array[11] = vect_compute_K_entry(11, c, e, E_array, t)
-    
-    K_array[14] = vect_compute_K_entry(14, c, e, E_array, t)
-    K_array[15] = vect_compute_K_entry(15, c, e, E_array, t)
-    K_array[16] = vect_compute_K_entry(16, c, e, E_array, t)
-    K_array[17] = vect_compute_K_entry(17, c, e, E_array, t)
-    
-    K_array[21] = vect_compute_K_entry(21, c, e, E_array, t)
-    K_array[22] = vect_compute_K_entry(22, c, e, E_array, t)
-    K_array[23] = vect_compute_K_entry(23, c, e, E_array, t)
-    
-    K_array[28] = vect_compute_K_entry(28, c, e, E_array, t)
-    K_array[29] = vect_compute_K_entry(29, c, e, E_array, t)
-
-    K_array[35] = vect_compute_K_entry(35, c, e, E_array, t)
-
+    indip_indices = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 14, 15, 16, 17, 21, 22, 23, 28, 29, 35]
     tril_indices = [6, 12, 13, 18, 19, 20, 24, 25, 26, 27, 30, 31, 32, 33, 34]  # tril: lower-triangle array
-    triu_indices = [1,  2,  8,  3,  9, 15,  4, 10, 16, 22,  5, 11, 17, 23, 29]
-    K_array[tril_indices] = K_array[triu_indices]
+    triu_indices = [1,  2,  8,  3,  9, 15,  4, 10, 16, 22,  5, 11, 17, 23, 29]  # triu: upper-triangle array
 
+    for l in indip_indices:
+        K_array[l] = vect_compute_K_entry(l, c, e, E_array, t)
+
+    K_array[tril_indices] = K_array[triu_indices]
     return K_array
 
 

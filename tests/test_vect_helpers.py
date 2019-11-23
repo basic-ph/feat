@@ -97,7 +97,7 @@ def test_vect_stiffness_matrix(setup_data, setup_mesh):
         3000000., -12000000., 2000000., -2000000., -5000000., 14000000.,
     ])
 
-    np.testing.assert_allclose(k_0_true, K_array[:,0], verbose=True)  # comparing with first col of K_array
+    np.testing.assert_allclose(k_0_true, K_array[:,0])  # comparing with first col of K_array
     np.testing.assert_allclose(k_1_true, K_array[:,1])
 
 
