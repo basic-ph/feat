@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from feat.helpers import compute_E_matrices, gauss_quadrature
-from feat.vect_helpers import (assembly_opt_v1, vect_assembly, vect_compute_E,
+from feat.vect_helpers import (vect_assembly, vect_compute_E,
                                vect_compute_global_dof, vect_compute_K_entry)
 
 
@@ -64,9 +64,7 @@ def test_vect_assembly(setup_data, setup_mesh):
     mesh = setup_mesh("gmsh/msh/test.msh")
     elements_num = mesh.cells["triangle"].shape[0]
 
-    E_array = vect_compute_E(data, mesh, elements_num)
-
-    K_array, I_array, J_array = vect_assembly(data, mesh, E_array)
+    K_array, I_array, J_array = vect_assembly(data, mesh)
 
     k_0_true = np.array([
         5333333.33333333, 0.0, -5333333.33333333, 2000000., 0., -2000000.,

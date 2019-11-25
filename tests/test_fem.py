@@ -6,7 +6,7 @@ from feat.helpers import (assembly, compute_E_matrices, gauss_quadrature,
 from feat.post_proc import compute_modulus
 
 
-def test_base(setup_data, setup_mesh):
+def test_fem(setup_data, setup_mesh):
     data = setup_data("data/test.json")
     weights, locations = gauss_quadrature(data)
     mesh = setup_mesh("gmsh/msh/test.msh")

@@ -78,12 +78,14 @@ def vect_compute_global_dof(mesh):
     return elements_dof
 
 
-def vect_assembly(data, mesh, E_array):
+def vect_assembly(data, mesh):
 
     t = data["thickness"]
     elements_num = mesh.cells["triangle"].shape[0]
     e = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
     c = mesh.points[:,:2]  # x, y coordinates
+
+    E_array = vect_compute_E(data, mesh, elements_num)
     K_array = np.zeros((36, elements_num))
     I_array = np.zeros((36, elements_num))
     J_array = np.zeros((36, elements_num))
