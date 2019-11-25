@@ -2,29 +2,6 @@ import numpy as np
 from helpers import stiffness_matrix, compute_global_dof
 
 
-def assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J):
-
-    elements_num = mesh.cells["triangle"].shape[0]
-    
-    # K_loc: array with values from local stiffness matrix (column-wise)
-    k = stiffness_matrix(e, data, mesh, E_matrices)
-    K_loc = np.ravel(k, order="F")
-
-    # I_loc: global row indices -- J_loc: global column indices
-    element_dof = compute_global_dof(e, mesh)
-    
-    I_loc = np.tile(element_dof, 6)  # reps is the number of dof in each element
-    J_loc = np.repeat(element_dof, 6)  # repeats is again the number of dof ^^
-    start = 36 * e
-    end = 36 * (e + 1)
-
-    K_flat[start:end] = K_loc
-    I[start:end] = I_loc
-    J[start:end] = J_loc
-    
-    return K_flat, I, J
-
-
 def vect_compute_E(data, mesh, elements_num):
     condition = data["load condition"]
     materials_num = len(data["materials"].keys())
@@ -66,7 +43,7 @@ def vect_compute_E(data, mesh, elements_num):
     return E_array
 
 
-def vect_compute_K_entry(l, c, e, E_array, t):
+def vect_compute_K_entry(row, col, c, e, E_array, t):
 
     J = ((c[e[:,1]][:,0] - c[e[:,0]][:,0]) * (c[e[:,2]][:,1] - c[e[:,0]][:,1]) -
         (c[e[:,2]][:,0] - c[e[:,0]][:,0]) * (c[e[:,1]][:,1] - c[e[:,0]][:,1]))
@@ -82,7 +59,6 @@ def vect_compute_K_entry(l, c, e, E_array, t):
     
     E_indices = np.array([(0, 1, 0, 1, 0, 1), (1, 3, 1, 3, 1, 3)])
 
-    row, col = np.unravel_index(l, (6,6))
     if (row % 2 == 0):
         E = E_array[:, E_indices[0, col]]
     else:
@@ -121,15 +97,13 @@ def vect_assembly(data, mesh, E_array):
     triu_indices = [1,  2,  8,  3,  9, 15,  4, 10, 16, 22,  5, 11, 17, 23, 29]  # triu: upper-triangle array
 
     for l in indip_indices:
-        K_array[l] = vect_compute_K_entry(l, c, e, E_array, t)
         row, col = np.unravel_index(l, (6,6))
+        K_array[l] = vect_compute_K_entry(row, col, c, e, E_array, t)
         I_array[l] = elements_dof[:, row]
         J_array[l] = elements_dof[:, col]
 
     K_array[tril_indices] = K_array[triu_indices]
     I_array[tril_indices] = J_array[triu_indices]
     J_array[tril_indices] = I_array[triu_indices]
-    print(I_array)
-    print()
-    print(J_array)
+
     return K_array, I_array, J_array

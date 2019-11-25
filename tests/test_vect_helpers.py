@@ -7,54 +7,6 @@ from feat.vect_helpers import (assembly_opt_v1, vect_assembly, vect_compute_E,
                                vect_compute_global_dof, vect_compute_K_entry)
 
 
-def test_assembly_opt_v1(setup_data, setup_mesh):
-    data = setup_data("data/test.json")
-    weights, locations = gauss_quadrature(data)
-    mesh = setup_mesh("gmsh/msh/test.msh")
-    elements = mesh.cells["triangle"].shape[0]
-    nodes = mesh.points.shape[0]
-
-    E_matrices = compute_E_matrices(data, mesh)
-    K_flat = np.zeros(36 * elements)  # 36 is 6^2 (dofs^2)
-    I = np.zeros(36 * elements, dtype=np.int32)  # the 2nd quantity is the number of elements
-    J = np.zeros(36 * elements, dtype=np.int32)
-    # testing only with element 1 (the 2nd)
-    for e in range(elements):  # number of elements
-        K_flat, I, J = assembly_opt_v1(e, data, mesh, E_matrices, K_flat, I, J)
-
-    I_true = np.array([
-        0, 1, 2, 3, 4, 5,
-        0, 1, 2, 3, 4, 5,
-        0, 1, 2, 3, 4, 5,
-        0, 1, 2, 3, 4, 5,
-        0, 1, 2, 3, 4, 5,
-        0, 1, 2, 3, 4, 5,
-        0, 1, 4, 5, 6, 7,
-        0, 1, 4, 5, 6, 7,
-        0, 1, 4, 5, 6, 7,
-        0, 1, 4, 5, 6, 7,
-        0, 1, 4, 5, 6, 7,
-        0, 1, 4, 5, 6, 7,
-    ], dtype=np.int32)
-    J_true = np.array([
-        0, 0, 0, 0, 0, 0,
-        1, 1, 1, 1, 1, 1,
-        2, 2, 2, 2, 2, 2,
-        3, 3, 3, 3, 3, 3,
-        4, 4, 4, 4, 4, 4,
-        5, 5, 5, 5, 5, 5,
-        0, 0, 0, 0, 0, 0,
-        1, 1, 1, 1, 1, 1,
-        4, 4, 4, 4, 4, 4,
-        5, 5, 5, 5, 5, 5,
-        6, 6, 6, 6, 6, 6,
-        7, 7, 7, 7, 7, 7,
-    ], dtype=np.int32)
-    
-    np.testing.assert_allclose(I_true, I)
-    np.testing.assert_allclose(J_true, J)
-
-
 def test_compute_E_vect(setup_data, setup_mesh):
     data = setup_data("data/test_mat.json")
     mesh = setup_mesh("gmsh/msh/test_mat.msh")
@@ -79,9 +31,11 @@ def test_vect_compute_K_entry(setup_data, setup_mesh):
     c = mesh.points[:,:2]  # x, y coordinates
     E_array = vect_compute_E(data, mesh, elements_num)
 
-
-    k_0 = vect_compute_K_entry(0, c, e, E_array, t)
-    k_35 = vect_compute_K_entry(35, c, e, E_array, t)
+    row_0, col_0 = np.unravel_index(0, (6,6))
+    k_0 = vect_compute_K_entry(row_0, col_0, c, e, E_array, t)
+    
+    row_35, col_35 = np.unravel_index(35, (6,6))
+    k_35 = vect_compute_K_entry(row_35, col_35, c, e, E_array, t)
 
     k_0_true = np.array([5333333.33333333, 4500000.])
     k_35_true = np.array([12000000., 14000000.])
