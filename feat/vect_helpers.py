@@ -92,25 +92,6 @@ def vect_compute_K_entry(l, c, e, E_array, t):
     return k
 
 
-def vect_stiffness_matrix(data, mesh, E_array):
-    
-    t = data["thickness"]
-    elements_num = mesh.cells["triangle"].shape[0]
-    e = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
-    c = mesh.points[:,:2]  # x, y coordinates
-    K_array = np.zeros((36, elements_num))
-
-    indip_indices = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 14, 15, 16, 17, 21, 22, 23, 28, 29, 35]
-    tril_indices = [6, 12, 13, 18, 19, 20, 24, 25, 26, 27, 30, 31, 32, 33, 34]  # tril: lower-triangle array
-    triu_indices = [1,  2,  8,  3,  9, 15,  4, 10, 16, 22,  5, 11, 17, 23, 29]  # triu: upper-triangle array
-
-    for l in indip_indices:
-        K_array[l] = vect_compute_K_entry(l, c, e, E_array, t)
-
-    K_array[tril_indices] = K_array[triu_indices]
-    return K_array
-
-
 def vect_compute_global_dof(mesh):
     nodes = mesh.points.shape[0]
     elements = mesh.cells["triangle"]
@@ -119,3 +100,36 @@ def vect_compute_global_dof(mesh):
         elements_dof[:, n*2] = elements[:, n] * 2
         elements_dof[:, n*2+1] = elements[:, n] * 2 + 1
     return elements_dof
+
+
+def vect_assembly(data, mesh, E_array):
+
+    t = data["thickness"]
+    elements_num = mesh.cells["triangle"].shape[0]
+    e = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
+    c = mesh.points[:,:2]  # x, y coordinates
+    K_array = np.zeros((36, elements_num))
+    I_array = np.zeros((36, elements_num))
+    J_array = np.zeros((36, elements_num))
+
+    elements_dof = vect_compute_global_dof(mesh)
+    print(elements_dof)
+    print()
+
+    indip_indices = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 14, 15, 16, 17, 21, 22, 23, 28, 29, 35]
+    tril_indices = [6, 12, 13, 18, 19, 20, 24, 25, 26, 27, 30, 31, 32, 33, 34]  # tril: lower-triangle array
+    triu_indices = [1,  2,  8,  3,  9, 15,  4, 10, 16, 22,  5, 11, 17, 23, 29]  # triu: upper-triangle array
+
+    for l in indip_indices:
+        K_array[l] = vect_compute_K_entry(l, c, e, E_array, t)
+        row, col = np.unravel_index(l, (6,6))
+        I_array[l] = elements_dof[:, row]
+        J_array[l] = elements_dof[:, col]
+
+    K_array[tril_indices] = K_array[triu_indices]
+    I_array[tril_indices] = J_array[triu_indices]
+    J_array[tril_indices] = I_array[triu_indices]
+    print(I_array)
+    print()
+    print(J_array)
+    return K_array, I_array, J_array

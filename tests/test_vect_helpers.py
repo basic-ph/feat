@@ -3,9 +3,8 @@ import numpy as np
 import pytest
 
 from feat.helpers import compute_E_matrices, gauss_quadrature
-from feat.vect_helpers import (assembly_opt_v1, vect_compute_E,
-                               vect_compute_global_dof, vect_compute_K_entry,
-                               vect_stiffness_matrix)
+from feat.vect_helpers import (assembly_opt_v1, vect_assembly, vect_compute_E,
+                               vect_compute_global_dof, vect_compute_K_entry)
 
 
 def test_assembly_opt_v1(setup_data, setup_mesh):
@@ -70,38 +69,6 @@ def test_compute_E_vect(setup_data, setup_mesh):
     np.testing.assert_allclose(E_array_true, E_array)
 
 
-# @pytest.mark.skip
-def test_vect_stiffness_matrix(setup_data, setup_mesh):
-    data = setup_data("data/test.json")
-    mesh = setup_mesh("gmsh/msh/test.msh")
-    elements_num = mesh.cells["triangle"].shape[0]
-
-    E_array = vect_compute_E(data, mesh, elements_num)
-
-    K_array = vect_stiffness_matrix(data, mesh, E_array)
-
-    k_0_true = np.array([
-        5333333.33333333, 0.0, -5333333.33333333, 2000000., 0., -2000000.,
-        0., 2000000., 3000000., -2000000., -3000000., 0.,
-        -5333333.33333333, 3000000., 9833333.33333333, -5000000., -4500000., 2000000.,
-        2000000.,-2000000., -5000000., 14000000., 3000000., -12000000.,
-        0., -3000000., -4500000., 3000000., 4500000., 0.,
-        -2000000., 0., 2000000., -12000000., 0., 12000000.,
-    ])
-    k_1_true = np.array([
-        4500000., 0., 0., -3000000., -4500000., 3000000.,
-        0., 12000000., -2000000., 0., 2000000., -12000000.,
-        0., -2000000., 5333333.33333333, 0., -5333333.33333333, 2000000.,
-        -3000000., 0., 0., 2000000., 3000000., -2000000.,
-        -4500000., 2000000., -5333333.33333333, 3000000., 9833333.33333333, -5000000.,
-        3000000., -12000000., 2000000., -2000000., -5000000., 14000000.,
-    ])
-
-    np.testing.assert_allclose(k_0_true, K_array[:,0])  # comparing with first col of K_array
-    np.testing.assert_allclose(k_1_true, K_array[:,1])
-
-
-# @pytest.mark.skip
 def test_vect_compute_K_entry(setup_data, setup_mesh):
     data = setup_data("data/test.json")
     mesh = setup_mesh("gmsh/msh/test.msh")
@@ -136,3 +103,53 @@ def test_vect_compute_global_dof(setup_mesh):
         (0, 1, 4, 5, 6 ,7),
     ])
     np.testing.assert_allclose(element_dof_true, element_dof)
+
+
+def test_vect_assembly(setup_data, setup_mesh):
+    data = setup_data("data/test.json")
+    mesh = setup_mesh("gmsh/msh/test.msh")
+    elements_num = mesh.cells["triangle"].shape[0]
+
+    E_array = vect_compute_E(data, mesh, elements_num)
+
+    K_array, I_array, J_array = vect_assembly(data, mesh, E_array)
+
+    k_0_true = np.array([
+        5333333.33333333, 0.0, -5333333.33333333, 2000000., 0., -2000000.,
+        0., 2000000., 3000000., -2000000., -3000000., 0.,
+        -5333333.33333333, 3000000., 9833333.33333333, -5000000., -4500000., 2000000.,
+        2000000.,-2000000., -5000000., 14000000., 3000000., -12000000.,
+        0., -3000000., -4500000., 3000000., 4500000., 0.,
+        -2000000., 0., 2000000., -12000000., 0., 12000000.,
+    ])
+    k_1_true = np.array([
+        4500000., 0., 0., -3000000., -4500000., 3000000.,
+        0., 12000000., -2000000., 0., 2000000., -12000000.,
+        0., -2000000., 5333333.33333333, 0., -5333333.33333333, 2000000.,
+        -3000000., 0., 0., 2000000., 3000000., -2000000.,
+        -4500000., 2000000., -5333333.33333333, 3000000., 9833333.33333333, -5000000.,
+        3000000., -12000000., 2000000., -2000000., -5000000., 14000000.,
+    ])
+
+    np.testing.assert_allclose(k_0_true, K_array[:,0])  # comparing with first col of K_array
+    np.testing.assert_allclose(k_1_true, K_array[:,1])
+
+    I_array_true = np.array([
+        [0., 0.], [0., 0.], [0., 0.], [0., 0.], [0., 0.], [0., 0.],
+        [1., 1.], [1., 1.], [1., 1.], [1., 1.], [1., 1.], [1., 1.],
+        [2., 4.], [2., 4.], [2., 4.], [2., 4.], [2., 4.], [2., 4.],
+        [3., 5.], [3., 5.], [3., 5.], [3., 5.], [3., 5.], [3., 5.],
+        [4., 6.], [4., 6.], [4., 6.], [4., 6.], [4., 6.], [4., 6.],
+        [5., 7.], [5., 7.], [5., 7.], [5., 7.], [5., 7.], [5., 7.],
+    ])
+    J_array_true = np.array([
+        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
+        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
+        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
+        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
+        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
+        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
+    ])
+
+    np.testing.assert_allclose(I_array_true, I_array)
+    np.testing.assert_allclose(J_array_true, J_array)
