@@ -17,7 +17,7 @@ def test_vect_fem(setup_data, setup_mesh):
 
     R = np.zeros(nodes * 2)
     K_array, I_array, J_array = vect_assembly(data, mesh)
-    K = sparse.csc_matrix(
+    K = sparse.csr_matrix(
         (
             np.ravel(K_array),
             (np.ravel(I_array), np.ravel(J_array))
@@ -49,8 +49,8 @@ def test_vect_fem(setup_data, setup_mesh):
     br_corner.sparse_impose(K, R)
     tr_corner.impose(R)
 
-    K = K.tocsc()
-    D = sparse.linalg.spsolve(K, R)
+    K = K.tocsr()
+    D = linalg.spsolve(K, R)
 
     D_true = np.array([
         0.0,  0.0,

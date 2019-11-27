@@ -44,7 +44,7 @@ def analysis():
     elif VECT:
         R = np.zeros(nodes * 2)
         K_array, I_array, J_array = vect_assembly(data, mesh)
-        K = sparse.csc_matrix(
+        K = sparse.csr_matrix(
             (
                 np.ravel(K_array),  # data
                 (np.ravel(I_array), np.ravel(J_array)),  # row_ind, col_ind
@@ -87,7 +87,7 @@ def analysis():
         print("R:\n", R)
         print()
 
-        K = K.tocsc()
+        K = K.tocsr()
         D = linalg.spsolve(K, R)
         print("D:\n", D)
         print()
