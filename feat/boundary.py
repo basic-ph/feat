@@ -43,19 +43,23 @@ class DirichletBC(BoundaryCondition):
         self.imposed_disp = data["bc"]["dirichlet"][name]["value"]
         self.global_dof_num = self.nodes.shape[0] * self.constrained_dof.shape[0]
         self.global_dof = super(DirichletBC, self).compute_global_dof(self.nodes, self.constrained_dof, self.global_dof_num)
-        # print('name', self.name)
-        # print('dir glob dof:', self.global_dof)
 
-    def impose(self, K, R, matrix="full"):
-        if matrix == "full":
-            for d in self.global_dof:
-                R -= self.imposed_disp * K[:, d]  # modify RHS
-                K[:, d] = 0.0  # zero-out column
-                K[d, :] = 0.0  # zero-out row
-                K[d, d] = 1.0  # set diagonal to 1
-                R[d] = self.imposed_disp  # enforce value
-        elif matrix == "sparse":
-            pass
+    def impose(self, K, R):
+        for d in self.global_dof:
+            R -= self.imposed_disp * K[:, d]  # modify RHS
+            K[:, d] = 0.0  # zero-out column
+            K[d, :] = 0.0  # zero-out row
+            K[d, d] = 1.0  # set diagonal to 1
+            R[d] = self.imposed_disp  # enforce value
+            
+    def sparse_impose(self, K, R):
+        for d in self.global_dof:
+            K_col = np.ravel(K[:,d].toarray())  # FIXME is this efficient??
+            R -= self.imposed_disp * K_col  # modify RHS
+            K[:, d] = 0.0  # zero-out column
+            K[d, :] = 0.0  # zero-out row
+            K[d, d] = 1.0  # set diagonal to 1
+            R[d] = self.imposed_disp  # enforce value
 
 
 class NeumannBC(BoundaryCondition):

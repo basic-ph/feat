@@ -5,6 +5,7 @@ import time
 import meshio
 import numpy as np
 from scipy import sparse
+from scipy.sparse import linalg
 
 from boundary import DirichletBC, NeumannBC, dirichlet_dof
 from helpers import (assembly, compute_E_matrices, gauss_quadrature,
@@ -18,8 +19,8 @@ def analysis():
     data_path = "../data/test.json"
     mesh_path = "../gmsh/msh/test.msh"
     POST = False
-    BASE = True
-    VECTOR = False
+    BASE = False
+    VECT = True
     
     # DATA
     with open(data_path, "r") as data_file:
@@ -40,7 +41,7 @@ def analysis():
         print("K:\n", K)
         print("R:\n", R)
         print()
-    elif VECTOR:
+    elif VECT:
         R = np.zeros(nodes * 2)
         K_array, I_array, J_array = vect_assembly(data, mesh)
         K = sparse.csc_matrix(
@@ -50,10 +51,13 @@ def analysis():
             ),
             shape=(2 * nodes, 2 * nodes),
         )
-        print("K:\n", K)
+
+        K = K.tolil()  # convert to lil matrix TODO
+        # print("K:\n", K[:,0].toarray())
+        # print("K:\n", K[:,0].shape)
         print("R:\n", R)
         print()
-        sys.exit()
+        # sys.exit()
     
     
     # BOUNDARY CONDITIONS INSTANCES
@@ -65,17 +69,31 @@ def analysis():
         reaction_dof = dirichlet_dof(left_side)
         K_rows = K[reaction_dof, :]
 
-    left_side.impose(K, R)
-    br_corner.impose(K, R)
-    tr_corner.impose(R)
-    print("K:\n", K)
-    print("R:\n", R)
-    print()
 
     # SOLVER
-    D = np.linalg.solve(K, R)
-    print("D:\n", D)
-    print()
+    if BASE:
+        left_side.impose(K, R)
+        br_corner.impose(K, R)
+        tr_corner.impose(R)
+        # print("K:\n", K)
+        print("R:\n", R)
+        print()
+
+        D = np.linalg.solve(K, R)
+        print("D:\n", D)
+        print()
+    elif VECT:
+        left_side.sparse_impose(K, R)
+        br_corner.sparse_impose(K, R)
+        tr_corner.impose(R)
+        # print("K:\n", K)
+        print("R:\n", R)
+        print()
+
+        K = K.tocsc()
+        D = linalg.spsolve(K, R)
+        print("D:\n", D)
+        print()
 
     if POST:
         reactions = np.dot(K_rows, D)
