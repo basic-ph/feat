@@ -53,11 +53,8 @@ def analysis():
         )
 
         K = K.tolil()  # convert to lil matrix TODO
-        # print("K:\n", K[:,0].toarray())
-        # print("K:\n", K[:,0].shape)
         print("R:\n", R)
         print()
-        # sys.exit()
     
     
     # BOUNDARY CONDITIONS INSTANCES
