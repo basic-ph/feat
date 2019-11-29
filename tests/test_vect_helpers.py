@@ -40,9 +40,6 @@ def test_vect_compute_K_entry(setup_data, setup_mesh):
     k_0_true = np.array([5333333.33333333, 4500000.])
     k_35_true = np.array([12000000., 14000000.])
 
-    print(k_0)
-    print()
-    print(k_0_true)
     np.testing.assert_allclose(k_0_true, k_0)
     np.testing.assert_allclose(k_35_true, k_35)
 
@@ -50,58 +47,48 @@ def test_vect_compute_K_entry(setup_data, setup_mesh):
 def test_vect_compute_global_dof(setup_mesh):
     mesh = setup_mesh("gmsh/msh/test.msh")
 
-    element_dof = vect_compute_global_dof(mesh)
+    row, col = np.unravel_index(8, (6,6))
+    I_indices, J_indices = vect_compute_global_dof(mesh, row, col)
 
-    element_dof_true = np.array([
-        (0, 1, 2, 3, 4, 5),
-        (0, 1, 4, 5, 6 ,7),
-    ])
-    np.testing.assert_allclose(element_dof_true, element_dof)
+    I_indices_true = np.array([1, 1])
+    J_indices_true = np.array([2, 4])
+
+    np.testing.assert_allclose(I_indices_true, I_indices)
+    np.testing.assert_allclose(J_indices_true, J_indices)
+
+    del row; del col;
+    del I_indices; del J_indices;
+    del I_indices_true; del J_indices_true;
+    
+    row, col = np.unravel_index(29, (6,6))
+    I_indices, J_indices = vect_compute_global_dof(mesh, row, col)
+
+    I_indices_true = np.array([4, 6])
+    J_indices_true = np.array([5, 7])
+
+    np.testing.assert_allclose(I_indices_true, I_indices)
+    np.testing.assert_allclose(J_indices_true, J_indices)
 
 
+# @pytest.mark.skip
 def test_vect_assembly(setup_data, setup_mesh):
     data = setup_data("data/test.json")
     mesh = setup_mesh("gmsh/msh/test.msh")
     elements_num = mesh.cells["triangle"].shape[0]
 
-    K_array, I_array, J_array = vect_assembly(data, mesh)
+    K = vect_assembly(data, mesh)  # csr format
 
-    k_0_true = np.array([
-        5333333.33333333, 0.0, -5333333.33333333, 2000000., 0., -2000000.,
-        0., 2000000., 3000000., -2000000., -3000000., 0.,
-        -5333333.33333333, 3000000., 9833333.33333333, -5000000., -4500000., 2000000.,
-        2000000.,-2000000., -5000000., 14000000., 3000000., -12000000.,
-        0., -3000000., -4500000., 3000000., 4500000., 0.,
-        -2000000., 0., 2000000., -12000000., 0., 12000000.,
-    ])
-    k_1_true = np.array([
-        4500000., 0., 0., -3000000., -4500000., 3000000.,
-        0., 12000000., -2000000., 0., 2000000., -12000000.,
-        0., -2000000., 5333333.33333333, 0., -5333333.33333333, 2000000.,
-        -3000000., 0., 0., 2000000., 3000000., -2000000.,
-        -4500000., 2000000., -5333333.33333333, 3000000., 9833333.33333333, -5000000.,
-        3000000., -12000000., 2000000., -2000000., -5000000., 14000000.,
+    K_true = np.array([
+        [9833333.33333333, 0., -5333333.33333333, 2000000., 0., -5000000., -4500000., 3000000.],
+        [0., 14000000., 3000000., -2000000., -5000000., 0.,  2000000.,-12000000.],
+        [-5333333.33333333, 3000000., 9833333.33333333, -5000000., -4500000.,  2000000., 0., 0.],
+        [2000000., -2000000., -5000000., 14000000., 3000000., -12000000., 0., 0.],
+        [0., -5000000., -4500000., 3000000., 9833333.33333333, 0., -5333333.33333333, 2000000.],
+        [-5000000., 0., 2000000., -12000000., 0., 14000000., 3000000., -2000000.],
+        [-4500000., 2000000., 0., 0., -5333333.33333333, 3000000., 9833333.33333333, -5000000.],
+        [3000000., -12000000., 0., 0., 2000000., -2000000., -5000000., 14000000.],
     ])
 
-    np.testing.assert_allclose(k_0_true, K_array[:,0])  # comparing with first col of K_array
-    np.testing.assert_allclose(k_1_true, K_array[:,1])
-
-    I_array_true = np.array([
-        [0., 0.], [0., 0.], [0., 0.], [0., 0.], [0., 0.], [0., 0.],
-        [1., 1.], [1., 1.], [1., 1.], [1., 1.], [1., 1.], [1., 1.],
-        [2., 4.], [2., 4.], [2., 4.], [2., 4.], [2., 4.], [2., 4.],
-        [3., 5.], [3., 5.], [3., 5.], [3., 5.], [3., 5.], [3., 5.],
-        [4., 6.], [4., 6.], [4., 6.], [4., 6.], [4., 6.], [4., 6.],
-        [5., 7.], [5., 7.], [5., 7.], [5., 7.], [5., 7.], [5., 7.],
-    ])
-    J_array_true = np.array([
-        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
-        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
-        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
-        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
-        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
-        [0., 0.], [1., 1.], [2., 4.], [3., 5.], [4., 6.], [5., 7.],
-    ])
-
-    np.testing.assert_allclose(I_array_true, I_array)
-    np.testing.assert_allclose(J_array_true, J_array)
+    for i in range(8):
+        for j in range(8):
+            np.testing.assert_allclose(K_true[i,j], K[i,j])
