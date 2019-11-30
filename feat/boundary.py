@@ -5,6 +5,7 @@ from numpy.lib.arraysetops import unique
 def dirichlet_dof(*conditions):
     array_list = [c.global_dof for c in conditions]
     total_dof = np.concatenate(array_list)
+    # is necessary to add check for duplicate?
     return total_dof
 
 
@@ -73,11 +74,8 @@ class NeumannBC(BoundaryCondition):
         # print('name', self.name)
         # print('neu glob dof:', self.global_dof)
         
-    def impose(self, R, matrix="full"):
-        if matrix == "full":
-            for d in self.global_dof:
-                # nodal load = total load / number of nodes in this boundary
-                self.nodal_load = self.imposed_load / self.nodes.shape[0]
-                R[d] += self.nodal_load
-        elif matrix == "sparse":
-            pass
+    def impose(self, R,):
+        for d in self.global_dof:
+            # nodal load = total load / number of nodes in this boundary
+            self.nodal_load = self.imposed_load / self.nodes.shape[0]
+            R[d] += self.nodal_load

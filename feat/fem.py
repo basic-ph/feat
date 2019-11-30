@@ -19,8 +19,8 @@ def analysis():
     data_path = "../data/test.json"
     mesh_path = "../gmsh/msh/test.msh"
     POST = False
-    BASE = False
-    VECT = True
+    BASE = True
+    VECT = False
     
     # DATA
     with open(data_path, "r") as data_file:
@@ -63,7 +63,7 @@ def analysis():
         left_side.impose(K, R)
         br_corner.impose(K, R)
         tr_corner.impose(R)
-        # print("K:\n", K)
+        print("K:\n", K)
         print("R:\n", R)
         print()
 

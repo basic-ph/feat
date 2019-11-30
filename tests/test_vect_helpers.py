@@ -2,6 +2,7 @@
 import numpy as np
 import pytest
 
+from feat.boundary import DirichletBC, NeumannBC, dirichlet_dof
 from feat.helpers import compute_E_matrices, gauss_quadrature
 from feat.vect_helpers import (vect_assembly, vect_compute_E,
                                vect_compute_global_dof, vect_compute_K_entry)
@@ -43,31 +44,31 @@ def test_vect_compute_K_entry(setup_data, setup_mesh):
     np.testing.assert_allclose(k_0_true, k_0)
     np.testing.assert_allclose(k_35_true, k_35)
 
-
+# @pytest.mark.skip
 def test_vect_compute_global_dof(setup_mesh):
     mesh = setup_mesh("gmsh/msh/test.msh")
 
     row, col = np.unravel_index(8, (6,6))
-    I_indices, J_indices = vect_compute_global_dof(mesh, row, col)
+    row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
 
-    I_indices_true = np.array([1, 1])
-    J_indices_true = np.array([2, 4])
+    row_ind_true = np.array([1, 1])
+    col_ind_true = np.array([2, 4])
 
-    np.testing.assert_allclose(I_indices_true, I_indices)
-    np.testing.assert_allclose(J_indices_true, J_indices)
+    np.testing.assert_allclose(row_ind_true, row_ind)
+    np.testing.assert_allclose(col_ind_true, col_ind)
 
     del row; del col;
-    del I_indices; del J_indices;
-    del I_indices_true; del J_indices_true;
+    del row_ind; del col_ind;
+    del row_ind_true; del col_ind_true;
     
     row, col = np.unravel_index(29, (6,6))
-    I_indices, J_indices = vect_compute_global_dof(mesh, row, col)
+    row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
 
-    I_indices_true = np.array([4, 6])
-    J_indices_true = np.array([5, 7])
+    row_ind_true = np.array([4, 6])
+    col_ind_true = np.array([5, 7])
 
-    np.testing.assert_allclose(I_indices_true, I_indices)
-    np.testing.assert_allclose(J_indices_true, J_indices)
+    np.testing.assert_allclose(row_ind_true, row_ind)
+    np.testing.assert_allclose(col_ind_true, col_ind)
 
 
 # @pytest.mark.skip
@@ -75,6 +76,10 @@ def test_vect_assembly(setup_data, setup_mesh):
     data = setup_data("data/test.json")
     mesh = setup_mesh("gmsh/msh/test.msh")
     elements_num = mesh.cells["triangle"].shape[0]
+
+    left_side = DirichletBC("left side", data, mesh)
+    br_corner = DirichletBC("bottom right corner", data, mesh)
+    tr_corner = NeumannBC("top right corner", data, mesh)
 
     K = vect_assembly(data, mesh)  # csr format
 
@@ -92,3 +97,13 @@ def test_vect_assembly(setup_data, setup_mesh):
     for i in range(8):
         for j in range(8):
             np.testing.assert_allclose(K_true[i,j], K[i,j])
+
+
+#  [[ 1.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00]
+#  [ 0.00000000e+00  1.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00]
+#  [ 0.00000000e+00  0.00000000e+00  9.83333333e+06  0.00000000e+00 -4.50000000e+06  2.00000000e+06  0.00000000e+00  0.00000000e+00]
+#  [ 0.00000000e+00  0.00000000e+00  0.00000000e+00  1.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00]
+#  [ 0.00000000e+00  0.00000000e+00 -4.50000000e+06  0.00000000e+00  9.83333333e+06  0.00000000e+00  0.00000000e+00  0.00000000e+00]
+#  [ 0.00000000e+00  0.00000000e+00  2.00000000e+06  0.00000000e+00  0.00000000e+00  1.40000000e+07  0.00000000e+00  0.00000000e+00]
+#  [ 0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  1.00000000e+00  0.00000000e+00]
+#  [ 0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  0.00000000e+00  1.00000000e+00]]

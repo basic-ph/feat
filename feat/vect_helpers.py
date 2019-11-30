@@ -1,6 +1,7 @@
 import numpy as np
 from scipy import sparse
 from helpers import stiffness_matrix, compute_global_dof
+from boundary import dirichlet_dof
 
 
 def vect_compute_E(data, mesh, elements_num):
@@ -65,55 +66,58 @@ def vect_compute_K_entry(row, col, c, e, E_array, t):
     else:
         E = E_array[:, E_indices[1, col]]
 
-    k = (b[row][0] * b[col][0] * E + b[row][1] * b[col][1] * E_array[:,5]) / (J**2) * t * 0.5 * J
-    return k
+    k_data = (b[row][0] * b[col][0] * E + b[row][1] * b[col][1] * E_array[:,5]) / (J**2) * t * 0.5 * J
+    return k_data
 
 
 def vect_compute_global_dof(mesh, row, col):
     elements = mesh.cells["triangle"]
     elements_num = mesh.cells["triangle"].shape[0]
-    I_indices = np.zeros((elements_num))
-    J_indices = np.zeros((elements_num))
+    row_ind = np.zeros((elements_num))
+    col_ind = np.zeros((elements_num))
 
     if (row % 2 == 0):
-        I_indices = elements[:, row // 2] * 2
+        row_ind = elements[:, row // 2] * 2
     else:
-        I_indices = elements[:, row // 2] * 2 + 1
+        row_ind = elements[:, row // 2] * 2 + 1
     
     if (col % 2 == 0):
-        J_indices = elements[:, col // 2] * 2
+        col_ind = elements[:, col // 2] * 2
     else:
-        J_indices = elements[:, col // 2] * 2 + 1
+        col_ind = elements[:, col // 2] * 2 + 1
 
-    return I_indices, J_indices
+    return row_ind, col_ind
     
 
 
-def vect_assembly(data, mesh):
+def vect_assembly(data, mesh, *conditions):
 
     t = data["thickness"]
     nodes = mesh.points.shape[0]
     elements_num = mesh.cells["triangle"].shape[0]
-    e = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
-    c = mesh.points[:,:2]  # x, y coordinates
+    elements = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
+    coord = mesh.points[:,:2]  # x, y coordinates
+
+    k_data = np.zeros((elements_num))
+    row_ind = np.zeros((elements_num))
+    col_ind = np.zeros((elements_num))
+    r_data = np.zeros((elements_num))
 
     E_array = vect_compute_E(data, mesh, elements_num)
 
-    indip_indices = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 14, 15, 16, 17, 21, 22, 23, 28, 29, 35]
-    tril_indices = [6, 12, 13, 18, 19, 20, 24, 25, 26, 27, 30, 31, 32, 33, 34]  # tril: lower-triangle array
-    triu_indices = [1,  2,  8,  3,  9, 15,  4, 10, 16, 22,  5, 11, 17, 23, 29]  # triu: upper-triangle array
-
     K = sparse.csc_matrix((2 * nodes, 2 * nodes))
+    R = np.zeros((2 * nodes))
     
-    for l in indip_indices:
-        row, col = np.unravel_index(l, (6,6))
-        K_entries = vect_compute_K_entry(row, col, c, e, E_array, t)
-        I_indices, J_indices = vect_compute_global_dof(mesh, row, col)
-        K += sparse.csc_matrix((K_entries, (I_indices, J_indices)),shape=(8,8))
-    for l in tril_indices:
-        row, col = np.unravel_index(l, (6,6))
-        K_entries = vect_compute_K_entry(row, col, c, e, E_array, t)
-        I_indices, J_indices = vect_compute_global_dof(mesh, row, col)
-        K += sparse.csc_matrix((K_entries, (I_indices, J_indices)),shape=(8,8))
+    for (row, col) in zip(*np.triu_indices(6, k=1)):
+        k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
+        row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
+        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(8,8))
+    
+    K = K + K.transpose()
+
+    for (row, col) in zip(*np.diag_indices(6)):
+        k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
+        row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
+        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(8,8))
 
     return K
