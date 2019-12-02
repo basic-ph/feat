@@ -17,10 +17,10 @@ Line(4) = {4, 1};
 Curve Loop(1) = {1, 2, 3, 4};
 Plane Surface(1) = {1};
 
-Physical Surface("cheese", newreg) = {1} ;
-Physical Curve("left side", newreg) = {4}; // dirichlet
-Physical Point("bottom left corner", newreg) = {1}; // dirichlet
-Physical Curve("right side", newreg) = {2}; // neumann
+Physical Surface("cheese", 1) = {1} ;
+Physical Curve("left side", 2) = {4}; // dirichlet
+Physical Point("bottom left corner", 3) = {1}; // dirichlet
+Physical Curve("right side", 4) = {2}; // neumann
 
 Mesh 2;
 Save "../msh/base.msh";

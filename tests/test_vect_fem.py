@@ -20,7 +20,7 @@ def test_vect_fem(setup_data, setup_mesh):
     br_corner = DirichletBC("bottom right corner", data, mesh)
     tr_corner = NeumannBC("top right corner", data, mesh)
 
-    K, R = vect_assembly(data, mesh, left_side, br_corner)
+    K, K_stored, R = vect_assembly(data, mesh, left_side, br_corner)
     
     tr_corner.impose(R)
 

@@ -106,11 +106,13 @@ def vect_assembly(data, mesh, *conditions):
     E_array = vect_compute_E(data, mesh, elements_num)
 
     K = sparse.csc_matrix((2 * nodes, 2 * nodes))
+    K_stored = sparse.csr_matrix((2 * nodes, 2 * nodes))  # csr because row slicing is faster (we need rows for reactions)
     R = np.zeros((2 * nodes))
     
     for (row, col) in zip(*np.triu_indices(6, k=1)):  # upper triangular data
         k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
         row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
+        K_stored += sparse.csr_matrix((k_data, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
 
         for c in conditions:
             # creating masks (boolean arrays) used to access contrained data in k_data
@@ -120,23 +122,27 @@ def vect_assembly(data, mesh, *conditions):
             k_data[row_mask] = 0.0  # zero-out using row_mask
             k_data[col_mask] = 0.0  # zero-out using col_mask
 
-        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(8,8))
+        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
         R[row_ind] += r_data
     
     K = K + K.transpose()
+    K_stored = K_stored + K_stored.transpose()
 
     for (row, col) in zip(*np.diag_indices(6)):  # diagonal data
         k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
         row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
+        K_stored += sparse.csr_matrix((k_data, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
 
         for c in conditions:
             #
             col_mask = np.isin(col_ind, c.global_dof)
             r_data[col_mask] -= k_data[col_mask] * c.imposed_disp  # move contrained columns data to rhs data
-            k_data[col_mask] = 1.0  # zero-out using col_mask FIXME decide if use avg. value for condition number improvement
+            # k_data[col_mask] = 1.0  # zero-out using col_mask FIXME decide if use avg. value for condition number improvement
 
-        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(8,8))
+        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
         R[row_ind] += r_data
-    print(K.toarray())
-    print()
-    return K, R
+    
+    dir_dof = dirichlet_dof(*conditions)
+    K[dir_dof, dir_dof] = 1.0
+
+    return K, K_stored, R
