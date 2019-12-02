@@ -16,15 +16,12 @@ def test_vect_fem(setup_data, setup_mesh):
     elements_num = mesh.cells["triangle"].shape[0]
     nodes = mesh.points.shape[0]
 
-    R = np.zeros(nodes * 2)
-    K = vect_assembly(data, mesh)
-
     left_side = DirichletBC("left side", data, mesh)
     br_corner = DirichletBC("bottom right corner", data, mesh)
     tr_corner = NeumannBC("top right corner", data, mesh)
 
-    left_side.sparse_impose(K, R)
-    br_corner.sparse_impose(K, R)
+    K, R = vect_assembly(data, mesh, left_side, br_corner)
+    
     tr_corner.impose(R)
 
     D = linalg.spsolve(K, R)

@@ -108,16 +108,35 @@ def vect_assembly(data, mesh, *conditions):
     K = sparse.csc_matrix((2 * nodes, 2 * nodes))
     R = np.zeros((2 * nodes))
     
-    for (row, col) in zip(*np.triu_indices(6, k=1)):
+    for (row, col) in zip(*np.triu_indices(6, k=1)):  # upper triangular data
         k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
         row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
+
+        for c in conditions:
+            # creating masks (boolean arrays) used to access contrained data in k_data
+            row_mask = np.isin(row_ind, c.global_dof)  # check if each element in row_ind is part of gloabal_dof (True) or not (False)
+            col_mask = np.isin(col_ind, c.global_dof)
+            r_data[col_mask] -= k_data[col_mask] * c.imposed_disp  # move contrained columns data to rhs data
+            k_data[row_mask] = 0.0  # zero-out using row_mask
+            k_data[col_mask] = 0.0  # zero-out using col_mask
+
         K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(8,8))
+        R[row_ind] += r_data
     
     K = K + K.transpose()
 
-    for (row, col) in zip(*np.diag_indices(6)):
+    for (row, col) in zip(*np.diag_indices(6)):  # diagonal data
         k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
         row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
-        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(8,8))
 
-    return K
+        for c in conditions:
+            #
+            col_mask = np.isin(col_ind, c.global_dof)
+            r_data[col_mask] -= k_data[col_mask] * c.imposed_disp  # move contrained columns data to rhs data
+            k_data[col_mask] = 1.0  # zero-out using col_mask FIXME decide if use avg. value for condition number improvement
+
+        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(8,8))
+        R[row_ind] += r_data
+    print(K.toarray())
+    print()
+    return K, R
