@@ -19,8 +19,8 @@ def analysis():
     data_path = "../data/base.json"
     mesh_path = "../gmsh/msh/base.msh"
     POST = True
-    BASE = True
-    VECT = False
+    BASE = False
+    VECT = True
     
     # DATA
     with open(data_path, "r") as data_file:
@@ -53,13 +53,15 @@ def analysis():
             K_rows = K[reaction_dof, :]
 
     elif VECT:
-        K, K_stored, R = vect_assembly(data, mesh, left_side, bl_corner, right_side)
+        # K, K_stored, R = vect_assembly(data, mesh, left_side, bl_corner, right_side)
+        K, K_stored, R = vect_assembly(data, mesh, right_side)
+        print("K:\n", K_stored.toarray())
         print("K:\n", K.toarray())
         print("R:\n", R)
         print()
         if POST:
             reaction_dof = dirichlet_dof(left_side, bl_corner)
-            K_rows = K[reaction_dof, :]
+            K_rows = K_stored[reaction_dof, :]
             print("K_rows\n", K_rows)
 
     # SOLVER

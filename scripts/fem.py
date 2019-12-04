@@ -7,11 +7,11 @@ import numpy as np
 from scipy import sparse
 from scipy.sparse import linalg
 
-from boundary import DirichletBC, NeumannBC, dirichlet_dof
-from helpers import (assembly, compute_E_matrices, gauss_quadrature,
+from feat.boundary import DirichletBC, NeumannBC, dirichlet_dof
+from feat.helpers import (assembly, compute_E_matrices, gauss_quadrature,
                      stiffness_matrix)
-from post_proc import compute_modulus
-from vect_helpers import vect_assembly
+from feat.post_proc import compute_modulus
+from feat.vect_helpers import vect_assembly
 
 def analysis(): 
     
