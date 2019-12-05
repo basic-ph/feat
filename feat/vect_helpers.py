@@ -98,71 +98,121 @@ def vect_assembly(data, mesh, *conditions):
     elements = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
     coord = mesh.points[:,:2]  # x, y 
 
-    k_data = np.zeros((elements_num))
-    k_data_tmp = np.zeros((elements_num))
-    row_ind = np.zeros((elements_num))
-    col_ind = np.zeros((elements_num))
-    r_data = np.zeros((elements_num))
+    k_data = np.zeros(elements_num)
+    k_data_tmp = np.zeros(elements_num)
+    row_ind = np.zeros(elements_num)
+    col_ind = np.zeros(elements_num)
+
+    r_data = np.zeros(elements_num)
+    r_col_ind = np.zeros(elements_num, dtype=np.int32)
+    # r_row_ind = np.zeros(elements_num)  # copy of row_ind used ad column index for sparse R
 
     E_array = vect_compute_E(data, mesh, elements_num)
 
     K = sparse.csc_matrix((2 * nodes, 2 * nodes))
     K_stored = sparse.csr_matrix((2 * nodes, 2 * nodes))  # csr because row slicing is faster (we need rows for reactions)
-    R = np.zeros((2 * nodes))
+    # R = np.zeros((2 * nodes))
+    R = sparse.csr_matrix((2 * nodes, 1))
     
-    for (row, col) in zip(*np.triu_indices(6, k=1)):  # upper triangular data
-        print("row, col:", row, col)
-        k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
-        print("k_data", k_data)
-        row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
-        print("row ind", row_ind)
-        print("col ind", col_ind)
-        K_stored += sparse.csr_matrix((k_data, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
+    for row in range(6):  # 6 for T3 (2 dof for 3 nodes)
+        for col in range(6):
+            print("row, col:", row, col)
+            k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
+            print("k_data", k_data)
+            row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
+            print("row ind", row_ind)
+            print("col ind", col_ind)
+            K_stored += sparse.csr_matrix((k_data, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
 
-        for c in conditions:
-            k_data_tmp = np.copy(k_data)
-            # creating masks (boolean arrays) used to access contrained data in k_data
-            print("    name", c.name)
-            print("    bc glob dof", c.global_dof)
-            row_mask = np.isin(row_ind, c.global_dof)  # check if each element in row_ind is part of gloabal_dof (True) or not (False)
-            col_mask = np.isin(col_ind, c.global_dof)
-            print("    row mask", row_mask)
-            print("    col mask", col_mask)
-            print("    k_data", k_data_tmp)
-            print("    k_data[col_mask]", k_data_tmp[col_mask])
-            r_data[col_mask] -= k_data_tmp[col_mask] * c.imposed_disp  # move contrained columns data to rhs data
-            print("    r_data", r_data)
-            k_data_tmp[row_mask] = 0.0  # zero-out using row_mask
-            k_data_tmp[col_mask] = 0.0  # zero-out using col_mask
+            for c in conditions:
+                k_data_tmp = np.copy(k_data)
+                # creating masks (boolean arrays) used to access contrained data in k_data
+                print("    name", c.name)
+                print("    bc glob dof", c.global_dof)
+                row_mask = np.isin(row_ind, c.global_dof)  # check if each element in row_ind is part of gloabal_dof (True) or not (False)
+                col_mask = np.isin(col_ind, c.global_dof)
 
-            K += sparse.csc_matrix((k_data_tmp, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
-            R[row_ind] += r_data
-            r_data = np.zeros((elements_num))  # zero-out r_data array for new iteration
-            print("    R", R)
-    
-    K = K + K.transpose()
-    K_stored = K_stored + K_stored.transpose()
+                print("    row mask", row_mask)
+                print("    col mask", col_mask)
+                print("    k_data", k_data_tmp)
+                print("    k_data[col_mask]", k_data_tmp[col_mask])
+                r_data[col_mask] -= k_data_tmp[col_mask] * c.imposed_disp  # move contrained columns data to rhs data
+                print("    r_data", r_data)
+                k_data_tmp[row_mask] = 0.0  # zero-out using row_mask
+                k_data_tmp[col_mask] = 0.0  # zero-out using col_mask
 
-    for (row, col) in zip(*np.diag_indices(6)):  # diagonal data
-        print("row, col:", row, col)
-        k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
-        print("k_data", k_data)
-        row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
-        K_stored += sparse.csr_matrix((k_data, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
+                K += sparse.csc_matrix((k_data_tmp, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
+                r_row_ind = row_ind
+                R += sparse.csr_matrix((r_data, (r_row_ind, r_col_ind)), shape=(2 * nodes, 1))
+                # for i in range(row_ind.shape[0]):
+                #     R[row_ind[i]] += r_data[i]
+                r_data = np.zeros(elements_num)  # zero-out r_data array for new iteration
+                k_data_tmp = np.zeros(elements_num)
+                print("    R", R.toarray())
 
-        for c in conditions:
-            k_data_tmp = np.copy(k_data)
-
-            col_mask = np.isin(col_ind, c.global_dof)
-            r_data[col_mask] -= k_data_tmp[col_mask] * c.imposed_disp  # move contrained columns data to rhs data
-
-            K += sparse.csc_matrix((k_data_tmp, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
-            R[row_ind] += r_data
-            r_data = np.zeros((elements_num))  # zero-out r_data array for new iteration
-    
     dir_dof = dirichlet_dof(*conditions)
     K[dir_dof, dir_dof] = 1.0
     for c in conditions:
-        R[c.global_dof] = c.imposed_disp
+        R[c.global_dof, 0] = c.imposed_disp
+
+    R = R.toarray()
 
     return K, K_stored, R
+
+
+    # for (row, col) in zip(*np.triu_indices(6, k=1)):  # upper triangular data
+    #     print("row, col:", row, col)
+    #     k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
+    #     print("k_data", k_data)
+    #     row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
+    #     print("row ind", row_ind)
+    #     print("col ind", col_ind)
+    #     K_stored += sparse.csr_matrix((k_data, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
+
+    #     for c in conditions:
+    #         k_data_tmp = np.copy(k_data)
+    #         # creating masks (boolean arrays) used to access contrained data in k_data
+    #         print("    name", c.name)
+    #         print("    bc glob dof", c.global_dof)
+    #         row_mask = np.isin(row_ind, c.global_dof)  # check if each element in row_ind is part of gloabal_dof (True) or not (False)
+    #         col_mask = np.isin(col_ind, c.global_dof)
+    #         print("    row mask", row_mask)
+    #         print("    col mask", col_mask)
+    #         print("    k_data", k_data_tmp)
+    #         print("    k_data[col_mask]", k_data_tmp[col_mask])
+    #         r_data[col_mask] -= k_data_tmp[col_mask] * c.imposed_disp  # move contrained columns data to rhs data
+    #         print("    r_data", r_data)
+    #         k_data_tmp[row_mask] = 0.0  # zero-out using row_mask
+    #         k_data_tmp[col_mask] = 0.0  # zero-out using col_mask
+
+    #         K += sparse.csc_matrix((k_data_tmp, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
+    #         R[row_ind] += r_data
+    #         r_data = np.zeros((elements_num))  # zero-out r_data array for new iteration
+    #         print("    R", R)
+    
+    # K = K + K.transpose()
+    # K_stored = K_stored + K_stored.transpose()
+
+    # for (row, col) in zip(*np.diag_indices(6)):  # diagonal data
+    #     print("row, col:", row, col)
+    #     k_data = vect_compute_K_entry(row, col, coord, elements, E_array, t)
+    #     print("k_data", k_data)
+    #     row_ind, col_ind = vect_compute_global_dof(mesh, row, col)
+    #     K_stored += sparse.csr_matrix((k_data, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
+
+    #     for c in conditions:
+    #         k_data_tmp = np.copy(k_data)
+
+    #         col_mask = np.isin(col_ind, c.global_dof)
+    #         r_data[col_mask] -= k_data_tmp[col_mask] * c.imposed_disp  # move contrained columns data to rhs data
+
+    #         K += sparse.csc_matrix((k_data_tmp, (row_ind, col_ind)),shape=(2 * nodes, 2 * nodes))
+    #         R[row_ind] += r_data
+    #         r_data = np.zeros((elements_num))  # zero-out r_data array for new iteration
+    
+    # dir_dof = dirichlet_dof(*conditions)
+    # K[dir_dof, dir_dof] = 1.0
+    # for c in conditions:
+    #     R[c.global_dof] = c.imposed_disp
+
+    # return K, K_stored, R
