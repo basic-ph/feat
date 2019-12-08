@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import sparse
-from helpers import stiffness_matrix, compute_global_dof
-from boundary import dirichlet_dof
+from .helpers import stiffness_matrix, compute_global_dof
+from .boundary import dirichlet_dof
 
 
 def vect_compute_E(data, mesh, elements_num):
