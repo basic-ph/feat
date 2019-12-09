@@ -1,33 +1,43 @@
+import meshio
 import numpy as np
 import pytest
 
-from feat.helpers import compute_E_matrices, gauss_quadrature, stiffness_matrix
+from feat import base
 
 
-def test_compute_E_matrices(setup_data, setup_mesh):
-    data = setup_data(r"data/test_mat.json")
-    mesh = setup_mesh(r"gmsh/msh/test_mat.msh")
+def test_compute_E_array():
+    mesh_path = "tests/data/msh/test.msh"
+    load_condition = "plane stress"  # "plane stress" or "plane strain"
+    steel = base.Material(1, 3e7, 0.25, load_condition)
 
-    E_matrices = compute_E_matrices(data, mesh)
+    mesh = meshio.read(mesh_path)    
+    E_array = base.compute_E_array(mesh, steel)
+
     E_steel = np.array([
         (3.2e7, 8e6, 0.0),
         (8e6, 3.2e7, 0.0),
         (0.0, 0.0, 1.2e7),
     ])
     # TODO add aluminum matrix testing
-    np.testing.assert_allclose(E_steel, E_matrices[0])
+    np.testing.assert_allclose(E_steel, E_array[0])
 
 
-def test_stiffness_matrix(setup_data, setup_mesh):
-    data = setup_data("data/test.json")
-    weights, locations = gauss_quadrature(data)
-    mesh = setup_mesh("gmsh/msh/test.msh")
-    elements = mesh.cells["triangle"].shape[0]
+def test_stiffness_matrix():
+    mesh_path = "tests/data/msh/test.msh"
+
+    element_type = "T3"
+    integration_points = 1
+    load_condition = "plane stress"  # "plane stress" or "plane strain"
+    thickness = 0.5
+    steel = base.Material(1, 3e7, 0.25, load_condition)
+
+    mesh = meshio.read(mesh_path)
+    elements_num = mesh.cells["triangle"].shape[0]
     nodes = mesh.points.shape[0]
-    E_matrices = compute_E_matrices(data, mesh)
+    E_array = base.compute_E_array(mesh, steel)
 
-    k_0 = stiffness_matrix(0, data, mesh, E_matrices)
-    k_1 = stiffness_matrix(1, data, mesh, E_matrices)
+    k_0 = base.stiffness_matrix(0, mesh, E_array, thickness, element_type, integration_points)
+    k_1 = base.stiffness_matrix(1, mesh, E_array, thickness, element_type, integration_points)
 
     k_0_true = np.array([
         (5333333.33333333, 0.0, -5333333.33333333, 2000000., 0., -2000000.),
