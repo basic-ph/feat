@@ -13,7 +13,7 @@ from feat.base import DirichletBC, NeumannBC
 
 def main():
     # SETTINGS
-    mesh_path = "./data/msh/base.msh"
+    mesh_path = "./data/msh/base_large.msh"
     POST = True
 
     # DATA

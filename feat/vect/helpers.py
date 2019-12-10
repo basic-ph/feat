@@ -1,10 +1,6 @@
 import numpy as np
 from scipy import sparse
 
-from ..base.boundary import dirichlet_dof
-from ..base.helpers import compute_global_dof, stiffness_matrix
-
-
 def compute_E_array(mesh, *materials):
     elements_num = mesh.cells["triangle"].shape[0]
     materials_num = len(materials)
