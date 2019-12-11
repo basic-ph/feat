@@ -2,13 +2,6 @@ import numpy as np
 from numpy.lib.arraysetops import unique
 
 
-def dirichlet_dof(*conditions):
-    array_list = [c.global_dof for c in conditions]
-    total_dof = np.concatenate(array_list)
-    # is necessary to add check for duplicate?
-    return total_dof
-
-
 class BoundaryCondition():
     
     def __init__(self, name, mesh, dof, value):
@@ -44,14 +37,18 @@ class DirichletBC(BoundaryCondition):
         # read list of constrained dof in this bc
         self.global_dof_num = self.nodes.shape[0] * self.local_dof.shape[0]
         self.global_dof = super(DirichletBC, self).compute_global_dof(self.nodes, self.local_dof, self.global_dof_num)
+        self.values = np.repeat(self.value, self.global_dof_num)
 
-    def impose(self, K, R):
+    def apply_to_R(self, K, R):  # FIXME
         for d in self.global_dof:
             R -= self.value * K[:, d]  # modify RHS
+            R[d] = self.value  # enforce value
+    
+    def apply_to_K(self, K):  # FIXME
+        for d in self.global_dof:
             K[:, d] = 0.0  # zero-out column
             K[d, :] = 0.0  # zero-out row
             K[d, d] = 1.0  # set diagonal to 1
-            R[d] = self.value  # enforce value
             
     def sparse_impose(self, K, R):
         for d in self.global_dof:
@@ -69,11 +66,48 @@ class NeumannBC(BoundaryCondition):
         super().__init__(name, mesh, dof, value)
         self.global_dof_num = self.nodes.shape[0] * self.local_dof.shape[0]
         self.global_dof = super(NeumannBC, self).compute_global_dof(self.nodes, self.local_dof, self.global_dof_num)
-        # print('name', self.name)
-        # print('neu glob dof:', self.global_dof)
+        # nodal load = total load / number of nodes in this boundary
+        self.nodal_load = self.value / self.nodes.shape[0]
         
-    def impose(self, R):
+    def apply(self, R):
         for d in self.global_dof:
-            # nodal load = total load / number of nodes in this boundary
-            self.nodal_load = self.value / self.nodes.shape[0]
             R[d] += self.nodal_load
+
+
+def dirichlet_dof(*conditions):  # FIXME
+    array_list = [c.global_dof for c in conditions]
+    total_dof = np.concatenate(array_list)
+    # is necessary to add check for duplicate?
+    return total_dof
+
+
+def build_dirichlet_data(*conditions):
+    dir_dof_list = [c.global_dof for c in conditions]
+    dir_values_list = [c.values for c in conditions]
+
+    dir_dof = np.concatenate(dir_dof_list)
+    dir_values = np.concatenate(dir_values_list)
+
+    return dir_dof, dir_values
+
+
+def apply_dirichlet(K, R, *conditions): 
+    dir_dof, dir_values = build_dirichlet_data(*conditions)
+
+    # loop over all dirichlet dof
+    for i in range(dir_dof.shape[0]):
+        R -= dir_values[i] * K[:, dir_dof[i]]  # modify R (force vector)
+        R[dir_dof[i]] = dir_values[i]  # enforce dirichlet value related to that dof
+    
+    for j in range(dir_dof.shape[0]):
+        K[:, dir_dof[j]] = 0.0  # clearing column related to dirichlet dof
+        K[dir_dof[j], :] = 0.0  # clearing row...
+        K[dir_dof[j], dir_dof[j]] = 1.0  # transform in identity row
+
+    return K, R
+
+def apply_neumann(R, *conditions):
+    for c in conditions:
+        for d in c.global_dof:
+            R[d] += c.nodal_load
+    return R

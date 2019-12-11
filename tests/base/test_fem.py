@@ -29,9 +29,8 @@ def test_fem():
     for e in range(elements_num):
         base.assembly(K, e, mesh, E_array, thickness, element_type, integration_points)
 
-    left_side.impose(K, R)
-    br_corner.impose(K, R)
-    tr_corner.impose(R)
+    K, R = base.apply_dirichlet(K, R, left_side, br_corner)
+    R = base.apply_neumann(R, tr_corner)
 
     D = np.linalg.solve(K, R)
 

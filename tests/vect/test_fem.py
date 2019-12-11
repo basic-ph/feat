@@ -28,9 +28,8 @@ def test_fem():
     R = np.zeros(nodes * 2)
     K = vect.assembly(mesh, E_array, thickness)
 
-    left_side.sparse_impose(K, R)
-    br_corner.sparse_impose(K, R)
-    tr_corner.impose(R)
+    K, R = vect.apply_dirichlet(nodes, K, R, left_side, br_corner)
+    R = base.apply_neumann(R, tr_corner)
 
     D = linalg.spsolve(K, R)
 
