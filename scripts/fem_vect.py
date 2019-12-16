@@ -16,8 +16,6 @@ def main():
     mesh_path = "./data/msh/test.msh"
     
     # DATA
-    element_type = "T3"
-    integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
 
@@ -43,9 +41,8 @@ def main():
     print()
 
     # BOUNDARY CONDITIONS APPLICATION
-    left_side.sparse_impose(K, R)
-    br_corner.sparse_impose(K, R)
-    tr_corner.impose(R)
+    K, R = vect.apply_dirichlet(nodes, K, R, left_side, br_corner)
+    R = base.apply_neumann(R, tr_corner)
     print("K:\n", K.toarray())
     print("R:\n", R)
     print()

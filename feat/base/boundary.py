@@ -97,9 +97,9 @@ def apply_dirichlet(K, R, *conditions):
     # loop over all dirichlet dof
     for i in range(dir_dof.shape[0]):
         R -= dir_values[i] * K[:, dir_dof[i]]  # modify R (force vector)
-        R[dir_dof[i]] = dir_values[i]  # enforce dirichlet value related to that dof
     
     for j in range(dir_dof.shape[0]):
+        R[dir_dof[j]] = dir_values[j]  # enforce dirichlet value related to that dof
         K[:, dir_dof[j]] = 0.0  # clearing column related to dirichlet dof
         K[dir_dof[j], :] = 0.0  # clearing row...
         K[dir_dof[j], dir_dof[j]] = 1.0  # transform in identity row

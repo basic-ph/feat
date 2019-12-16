@@ -45,9 +45,8 @@ def main():
     print()
 
     # BOUNDARY CONDITIONS APPLICATION
-    left_side.impose(K, R)
-    br_corner.impose(K, R)
-    tr_corner.impose(R)
+    K, R = base.apply_dirichlet(K, R, left_side, br_corner)
+    R = base.apply_neumann(R, tr_corner)
     print("K:\n", K)
     print("R:\n", R)
     print()

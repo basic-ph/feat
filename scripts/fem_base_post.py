@@ -13,7 +13,7 @@ from feat.base import DirichletBC, NeumannBC
 
 def main():
     # SETTINGS
-    mesh_path = "./data/msh/base_large.msh"
+    mesh_path = "./data/msh/base.msh"
     POST = True
 
     # DATA
@@ -50,9 +50,7 @@ def main():
         K_rows = K[reaction_dof, :]
 
     # BOUNDARY CONDITIONS APPLICATION
-    left_side.impose(K, R)
-    bl_corner.impose(K, R)
-    right_side.impose(K, R)
+    K, R = base.apply_dirichlet(K, R, left_side, bl_corner, right_side)
     print("K:\n", K)
     print("R:\n", R)
     print()
