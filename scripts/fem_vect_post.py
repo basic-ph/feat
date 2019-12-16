@@ -7,17 +7,15 @@ import numpy as np
 from scipy import sparse
 from scipy.sparse import linalg
 
-from feat import base
+from feat import base, vect
 from feat.base import DirichletBC, NeumannBC
 
 
 def main():
     # SETTINGS
     mesh_path = "./data/msh/base_large.msh"
-
+    
     # DATA
-    element_type = "T3"
-    integration_points = 1
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
 
@@ -35,35 +33,37 @@ def main():
     right_side = DirichletBC("right side", mesh, [0], 1.0)
 
     # ASSEMBLY
-    E_array = base.compute_E_array(mesh, cheese)
-    K = np.zeros((nodes * 2, nodes * 2))
+    E_array = vect.compute_E_array(mesh, cheese)
     R = np.zeros(nodes * 2)
-    for e in range(elements_num):
-        base.assembly(K, e, mesh, E_array, thickness, element_type, integration_points)
-    print("K:\n", K)
+    K = vect.assembly(mesh, E_array, thickness)
+    print("K:\n", K.toarray())
     print("R:\n", R)
     print()
 
-    # contrained dof rows of K are saved now
-    reaction_dof = base.dirichlet_dof(left_side, bl_corner)
-    K_rows = K[reaction_dof, :]
-
+    # save constrained dof rows of K
+    # dirichlet dof are built only for boundaries with related reactions
+    dirichlet_dof, dirichlet_values = base.build_dirichlet_data(left_side, bl_corner)
+    K = K.tocsr()
+    K_rows = K[dirichlet_dof,:]
+    K = K.tocsc()
+    
     # BOUNDARY CONDITIONS APPLICATION
-    K, R = base.apply_dirichlet(K, R, left_side, bl_corner, right_side)
-    print("K:\n", K)
+    K, R = vect.apply_dirichlet(nodes, K, R, left_side, bl_corner, right_side)
+    print("K:\n", K.toarray())
     print("R:\n", R)
     print()
 
     # SOLVER
-    D = np.linalg.solve(K, R)
+    D = linalg.spsolve(K, R)
     print("D:\n", D)
     print()
 
-    reactions = np.dot(K_rows, D)
+    reactions = K_rows.dot(D)
     print("reactions:\n", reactions)
     print()
     modulus = base.compute_modulus(mesh, right_side, reactions, thickness)
     print("modulus:\n", modulus)
+
 
 
 if __name__ == "__main__":

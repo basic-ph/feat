@@ -76,13 +76,13 @@ def assembly(mesh, E_array, thickness):
     for (row, col) in zip(*np.triu_indices(6, k=1)):
         k_data = compute_K_entry(row, col, coord, elements, E_array, t)
         row_ind, col_ind = compute_global_dof(mesh, row, col)
-        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(8,8))
+        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*nodes, 2*nodes))
     
     K = K + K.transpose()
 
     for (row, col) in zip(*np.diag_indices(6)):
         k_data = compute_K_entry(row, col, coord, elements, E_array, t)
         row_ind, col_ind = compute_global_dof(mesh, row, col)
-        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(8,8))
+        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*nodes, 2*nodes))
 
     return K
