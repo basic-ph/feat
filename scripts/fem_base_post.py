@@ -40,9 +40,9 @@ def main():
     R = np.zeros(nodes * 2)
     for e in range(elements_num):
         base.assembly(K, e, mesh, E_array, thickness, element_type, integration_points)
-    print("K:\n", K)
-    print("R:\n", R)
-    print()
+    # print("K:\n", K)
+    # print("R:\n", R)
+    # print()
 
     # contrained dof rows of K are saved now
     reaction_dof = base.dirichlet_dof(left_side, bl_corner)
@@ -50,9 +50,9 @@ def main():
 
     # BOUNDARY CONDITIONS APPLICATION
     K, R = base.apply_dirichlet(K, R, left_side, bl_corner, right_side)
-    print("K:\n", K)
-    print("R:\n", R)
-    print()
+    # print("K:\n", K)
+    # print("R:\n", R)
+    # print()
 
     # SOLVER
     D = np.linalg.solve(K, R)

@@ -13,14 +13,14 @@ from feat.base import DirichletBC, NeumannBC
 
 def main():
     # SETTINGS
-    mesh_path = "./data/msh/base_large.msh"
+    mesh_path = "./data/msh/base.msh"
     
     # DATA
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
 
     # MATERIAL
-    cheese = base.Material(1, 70, 0.0, load_condition)
+    cheese = base.Material(1, 70, 0.3, load_condition)
 
     # MESH
     mesh = meshio.read(mesh_path)
@@ -36,9 +36,9 @@ def main():
     E_array = vect.compute_E_array(mesh, cheese)
     R = np.zeros(nodes * 2)
     K = vect.assembly(mesh, E_array, thickness)
-    print("K:\n", K.toarray())
-    print("R:\n", R)
-    print()
+    # print("K:\n", K.toarray())
+    # print("R:\n", R)
+    # print()
 
     # save constrained dof rows of K
     # dirichlet dof are built only for boundaries with related reactions
@@ -49,9 +49,9 @@ def main():
     
     # BOUNDARY CONDITIONS APPLICATION
     K, R = vect.apply_dirichlet(nodes, K, R, left_side, bl_corner, right_side)
-    print("K:\n", K.toarray())
-    print("R:\n", R)
-    print()
+    # print("K:\n", K.toarray())
+    # print("R:\n", R)
+    # print()
 
     # SOLVER
     D = linalg.spsolve(K, R)
