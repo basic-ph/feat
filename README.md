@@ -1,5 +1,21 @@
 # FEAT (Finite Element Acceleration Techniques)
 
+## conda
+```
+conda create -n feat python=3.8 numpy scipy snakeviz pytest
+conda activate feat
+conda install -c conda-forge meshio
+```
+per generare il file YAML:
+```
+conda env export --from-history > environment.yml
+conda env export > environment.yml
+```
+per ricreare l'ambiente usando il file .yml usare:
+```
+conda env create -f environment.yml
+```
+
 ## pytest
 ```
 pip install -e .
@@ -9,27 +25,7 @@ Necessario perché `pytest` funzioni correttamente, altrimenti va
 utilizzato con il comando ```python -m pytest``` per eseguire i test direttamente 
 contro la copia locale senza usare pip.  
 
-
-## conda
-```
-conda create -n feat python=3.7 numpy pytest
-...
-conda activate feat
-pip install meshio
-
-... OK
-```
-per ricreare l'ambiente usando il file .yml usare:
-NON FUNZIONANTE (riprovare?)
-```
-conda env create --file envname.yml
-```
-per generare il file YAML:
-```
-conda env export --name feat > environment.yml
-```
-
-## GMSH python API
+## ~~GMSH python API~~
 from:
 https://gitlab.onelab.info/gmsh/gmsh/blob/master/demos/api/README.txt#L19  
 >To run the Python examples, add the "lib" directory from the SDK to PYTHONPATH,  
