@@ -7,6 +7,4 @@ dependencies:
   - pytest
   - scipy
   - snakeviz
-  - meshio
-prefix: C:\Users\basic\Miniconda3\envs\feat
-
+  - conda-forge::meshio
