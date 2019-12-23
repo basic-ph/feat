@@ -19,6 +19,8 @@ jobs:
       - name: debug
         run: |
           conda env list
+          conda activate feat
+          conda list
       # conda activate feat
       # pip install -e .
       # - name: Testing with pytest
