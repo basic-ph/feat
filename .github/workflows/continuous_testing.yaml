@@ -1,10 +1,10 @@
-name: Testing
+name: CI
 # This workflow is triggered on pushes to the repository.
 on: push
 
 jobs:
   test:
-    name: Test
+    name: Pytest Testing
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -13,7 +13,16 @@ jobs:
         with:
           update-conda: true
           python-version: 3.8
-          conda-channels: anaconda, conda-forge
-      - run: conda --version
-      - run: which python
-      - run: ls
+      - name: Env info
+        run: conda --version
+        run: which python
+        run: ls
+      - name: Creating conda Env
+        # creating conda virtual env using YAML file
+        run: conda env create -f environment.yml
+        # activating the newly created env
+        run: conda activate feat
+        # installing feat package in editable mode
+        run: pip install -e .
+      - name: Testing with pytest
+        run: pytest
