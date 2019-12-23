@@ -1,5 +1,4 @@
 name: CI
-# This workflow is triggered on pushes to the repository.
 on: push
 
 jobs:
@@ -18,6 +17,8 @@ jobs:
           conda env create -f environment.yml
       - name: debug
         run: |
+          conda env list
+          conda init bash
           conda env list
           conda activate feat
           conda list
