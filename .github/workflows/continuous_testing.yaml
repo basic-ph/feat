@@ -16,3 +16,4 @@ jobs:
           conda-channels: anaconda, conda-forge
       - run: conda --version
       - run: which python
+      - run: ls
