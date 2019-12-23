@@ -14,7 +14,7 @@ jobs:
           python-version: 3.8
       - name: debug
         run: |
-          conda env update --name base --file .\environment.yml
+          conda env update --name base --file environment.yml
           pip install -e .
           conda env list
       - name: Testing with pytest
