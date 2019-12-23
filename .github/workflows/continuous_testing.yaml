@@ -12,17 +12,10 @@ jobs:
         with:
           update-conda: true
           python-version: 3.8
-      - name: Creating conda environment   
-        run: |
-          conda env create -f environment.yml
       - name: debug
         run: |
+          conda env update --name base --file .\environment.yml
+          pip install -e .
           conda env list
-          conda init bash
-          conda env list
-          conda activate feat
-          conda list
-      # conda activate feat
-      # pip install -e .
-      # - name: Testing with pytest
-      #   run: pytest
+      - name: Testing with pytest
+        run: pytest
