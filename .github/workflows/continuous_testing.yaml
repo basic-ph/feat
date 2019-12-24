@@ -16,7 +16,7 @@ jobs:
       - name: Conda environment creation	
         run: |
           conda env create -f environment.yml	
-          conda activate feat	
+          source activate feat	
           pip install -e .
       # env activation as it should be
       # - name: Conda environment creation	
