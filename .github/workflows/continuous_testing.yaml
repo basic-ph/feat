@@ -7,15 +7,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: Setup conda
+      - name: Conda setup
         uses: s-weigand/setup-conda@v1
         with:
           update-conda: true
           python-version: 3.8
-      - name: debug
+      # env activation as suggested by @s-weigand
+      - name: Conda environment creation	
         run: |
-          conda env update --name base --file environment.yml
+          conda env create -f environment.yml	
+          conda activate feat	
           pip install -e .
-          conda env list
+      # env activation as it should be
+      # - name: Conda environment creation	
+      #   run: |
+      #     conda env create -f environment.yml	
+      #     conda activate feat	
+      #     pip install -e .
       - name: Testing with pytest
         run: pytest
