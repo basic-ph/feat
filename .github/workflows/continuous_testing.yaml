@@ -27,5 +27,4 @@ jobs:
       - name: Testing with pytest
         run: |
           source activate feat
-          conda env list
           pytest
