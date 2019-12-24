@@ -26,4 +26,6 @@ jobs:
       #     conda activate feat	
       #     pip install -e .
       - name: Testing with pytest
-        run: pytest
+        run: |
+          conda env list
+          pytest
