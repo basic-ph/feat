@@ -1,6 +1,7 @@
 import sys
 
 import numpy as np
+from scipy import sparse
 from numpy.linalg import det, inv
 
 
@@ -146,4 +147,16 @@ def assembly(K, e, mesh, E_array, thickness, element_type, integration_points):
         for j in range(6):  # becomes 12 for T6
             J = element_dof[j]
             K[I, J] += k[i, j]
+    return K
+
+
+def sparse_assembly(K, e, mesh, E_array, thickness, element_type, integration_points):
+    nodes = mesh.points.shape[0]
+    k = stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_points)
+    k_data = np.ravel(k)  # flattened 6x6 local matrix
+    element_dof = compute_global_dof(e, mesh)
+
+    row_ind = np.repeat(element_dof, 6)
+    col_ind = np.tile(element_dof, 6)
+    K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*nodes, 2*nodes))
     return K
