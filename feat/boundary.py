@@ -39,26 +39,6 @@ class DirichletBC(BoundaryCondition):
         self.global_dof = super(DirichletBC, self).compute_global_dof(self.nodes, self.local_dof, self.global_dof_num)
         self.values = np.repeat(self.value, self.global_dof_num)
 
-    def apply_to_R(self, K, R):  # FIXME
-        for d in self.global_dof:
-            R -= self.value * K[:, d]  # modify RHS
-            R[d] = self.value  # enforce value
-    
-    def apply_to_K(self, K):  # FIXME
-        for d in self.global_dof:
-            K[:, d] = 0.0  # zero-out column
-            K[d, :] = 0.0  # zero-out row
-            K[d, d] = 1.0  # set diagonal to 1
-            
-    def sparse_impose(self, K, R):
-        for d in self.global_dof:
-            K_col = np.ravel(K[:,d].toarray())  # FIXME is this efficient??
-            R -= self.value * K_col  # modify RHS
-            K[:, d] = 0.0  # zero-out column
-            K[d, :] = 0.0  # zero-out row
-            K[d, d] = 1.0  # set diagonal to 1
-            R[d] = self.value  # enforce value
-
 
 class NeumannBC(BoundaryCondition):
 
@@ -69,10 +49,6 @@ class NeumannBC(BoundaryCondition):
         # nodal load = total load / number of nodes in this boundary
         self.nodal_load = self.value / self.nodes.shape[0]
         
-    def apply(self, R):
-        for d in self.global_dof:
-            R[d] += self.nodal_load
-
 
 def dirichlet_dof(*conditions):  # FIXME
     array_list = [c.global_dof for c in conditions]
@@ -106,8 +82,20 @@ def apply_dirichlet(K, R, *conditions):
 
     return K, R
 
+
 def apply_neumann(R, *conditions):
     for c in conditions:
         for d in c.global_dof:
             R[d] += c.nodal_load
     return R
+
+
+def sp_apply_dirichlet(nodes, K, R, *conditions):
+    dir_dof, dir_values = build_dirichlet_data(*conditions)
+    R[dir_dof] = dir_values
+    # mask of booleans checking if (row) indices are present in dirichlet dof array
+    mask_csc = np.in1d(K.indices, dir_dof)
+    K.data[mask_csc] = 0.0  # elements are cleared directly from data sparse attribute
+    K[dir_dof, dir_dof] = 1.0  # fancy indexing
+
+    return K, R

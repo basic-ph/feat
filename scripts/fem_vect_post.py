@@ -7,8 +7,8 @@ import numpy as np
 from scipy import sparse
 from scipy.sparse import linalg
 
-from feat import base, vect
-from feat.base import DirichletBC, NeumannBC
+from feat import base, vector
+from feat import boundary as bc
 
 
 def main():
@@ -28,27 +28,27 @@ def main():
     nodes = mesh.points.shape[0]
 
     # BOUNDARY CONDITIONS INSTANCES
-    left_side = DirichletBC("left side", mesh, [0], 0.0)
-    bl_corner = DirichletBC("bottom left corner", mesh, [1], 0.0)
-    right_side = DirichletBC("right side", mesh, [0], 1.0)
+    left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
+    bl_corner = bc.DirichletBC("bottom left corner", mesh, [1], 0.0)
+    right_side = bc.DirichletBC("right side", mesh, [0], 1.0)
 
     # ASSEMBLY
-    E_array = vect.compute_E_array(mesh, cheese)
+    E_array = vector.compute_E_array(mesh, cheese)
     R = np.zeros(nodes * 2)
-    K = vect.assembly(mesh, E_array, thickness)
+    K = vector.assembly(mesh, E_array, thickness)
     # print("K:\n", K.toarray())
     # print("R:\n", R)
     # print()
 
     # save constrained dof rows of K
     # dirichlet dof are built only for boundaries with related reactions
-    dirichlet_dof, dirichlet_values = base.build_dirichlet_data(left_side, bl_corner)
+    dirichlet_dof, dirichlet_values = bc.build_dirichlet_data(left_side, bl_corner)
     K = K.tocsr()
     K_rows = K[dirichlet_dof,:]
     K = K.tocsc()
     
     # BOUNDARY CONDITIONS APPLICATION
-    K, R = vect.apply_dirichlet(nodes, K, R, left_side, bl_corner, right_side)
+    K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, bl_corner, right_side)
     # print("K:\n", K.toarray())
     # print("R:\n", R)
     # print()

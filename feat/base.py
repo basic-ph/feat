@@ -160,3 +160,15 @@ def sparse_assembly(K, e, mesh, E_array, thickness, element_type, integration_po
     col_ind = np.tile(element_dof, 6)
     K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*nodes, 2*nodes))
     return K
+
+
+def compute_modulus(mesh, boundary, reactions, t):
+
+    # pick x coord of first point in boundary
+    lenght = mesh.points[boundary.nodes[0]][0]
+    x_disp = boundary.value  # x displacement of node 1
+    strain = x_disp / lenght
+    avg_stress = abs(np.sum(reactions) / (lenght * t))
+    modulus = avg_stress / strain
+
+    return modulus

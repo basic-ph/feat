@@ -1,9 +1,11 @@
 import meshio
 import numpy as np
 import pytest
+from scipy.sparse import linalg
 
-from feat import base, vect
-from feat.base import DirichletBC, NeumannBC
+from feat import base
+from feat import boundary as bc
+from feat import vector
 
 
 def test_compute_E_array():
@@ -14,7 +16,7 @@ def test_compute_E_array():
     
     mesh = meshio.read(mesh_path)
 
-    E_array = vect.compute_E_array(mesh, steel, aluminum)
+    E_array = vector.compute_E_array(mesh, steel, aluminum)
     E_array_true = np.array([
         (32000000., 8000000., 0., 32000000., 0., 12000000.),
         (11396011.3960114, 3988603.98860399, 0., 11396011.3960114, 0., 3703703.7037037),
@@ -36,13 +38,13 @@ def test_compute_K_entry():
     nodes = mesh.points.shape[0]
     elements = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
     coord = mesh.points[:,:2]  # x, y coordinates
-    E_array = vect.compute_E_array(mesh, steel)
+    E_array = vector.compute_E_array(mesh, steel)
 
     row_0, col_0 = np.unravel_index(0, (6,6))
-    k_0 = vect.compute_K_entry(row_0, col_0, coord, elements, E_array, thickness)
+    k_0 = vector.compute_K_entry(row_0, col_0, coord, elements, E_array, thickness)
     
     row_35, col_35 = np.unravel_index(35, (6,6))
-    k_35 = vect.compute_K_entry(row_35, col_35, coord, elements, E_array, thickness)
+    k_35 = vector.compute_K_entry(row_35, col_35, coord, elements, E_array, thickness)
 
     k_0_true = np.array([5333333.33333333, 4500000.])
     k_35_true = np.array([12000000., 14000000.])
@@ -56,7 +58,7 @@ def test_compute_global_dof():
     mesh = meshio.read(mesh_path)
 
     row, col = np.unravel_index(8, (6,6))
-    row_ind, col_ind = vect.compute_global_dof(mesh, row, col)
+    row_ind, col_ind = vector.compute_global_dof(mesh, row, col)
 
     row_ind_true = np.array([1, 1])
     col_ind_true = np.array([2, 4])
@@ -69,7 +71,7 @@ def test_compute_global_dof():
     del row_ind_true; del col_ind_true;
     
     row, col = np.unravel_index(29, (6,6))
-    row_ind, col_ind = vect.compute_global_dof(mesh, row, col)
+    row_ind, col_ind = vector.compute_global_dof(mesh, row, col)
 
     row_ind_true = np.array([4, 6])
     col_ind_true = np.array([5, 7])
@@ -88,13 +90,13 @@ def test_vect_assembly():
     elements_num = mesh.cells["triangle"].shape[0]
     nodes = mesh.points.shape[0]
 
-    left_side = DirichletBC("left side", mesh, [0, 1], 0.0)
-    br_corner = DirichletBC("bottom right corner", mesh, [1], 0.0)
-    tr_corner = NeumannBC("top right corner", mesh, [1], -1000.0)
+    left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
+    br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
+    tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
 
-    E_array = vect.compute_E_array(mesh, steel)
+    E_array = vector.compute_E_array(mesh, steel)
     R = np.zeros(nodes * 2)
-    K = vect.assembly(mesh, E_array, thickness)
+    K = vector.assembly(mesh, E_array, thickness)
     K_true = np.array([
         [9833333.33333333, 0., -5333333.33333333, 2000000., 0., -5000000., -4500000., 3000000.],
         [0., 14000000., 3000000., -2000000., -5000000., 0.,  2000000.,-12000000.],
@@ -107,8 +109,8 @@ def test_vect_assembly():
     ])
     np.testing.assert_allclose(K_true, K.toarray())
 
-    K, R = vect.apply_dirichlet(nodes, K, R, left_side, br_corner)
-    R = base.apply_neumann(R, tr_corner)
+    K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, br_corner)
+    R = bc.apply_neumann(R, tr_corner)
  
     K_true_bc = np.array([
         [1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
@@ -121,3 +123,38 @@ def test_vect_assembly():
         [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0],
     ])
     np.testing.assert_allclose(K_true_bc, K.toarray())
+
+
+def test_fem():
+    mesh_path = "tests/data/msh/test.msh"
+    
+    integration_points = 1
+    load_condition = "plane stress"  # "plane stress" or "plane strain"
+    thickness = 0.5
+    steel = base.Material(1, 3e7, 0.25, load_condition)
+
+    mesh = meshio.read(mesh_path)
+    elements_num = mesh.cells["triangle"].shape[0]
+    nodes = mesh.points.shape[0]
+
+    left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
+    br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
+    tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
+
+    E_array = vector.compute_E_array(mesh, steel)
+    R = np.zeros(nodes * 2)
+    K = vector.assembly(mesh, E_array, thickness)
+
+    K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, br_corner)
+    R = bc.apply_neumann(R, tr_corner)
+
+    D = linalg.spsolve(K, R)
+
+    D_true = np.array([
+        0.0,  0.0,
+        1.90773874e-05,  0.0,
+        8.73032981e-06, -7.41539125e-05,
+        0.0,  0.0
+    ])
+    # np.testing.assert_allclose(D_true, D)  # FIXME some zeros are 1.0e-20 why??
+    np.testing.assert_almost_equal(D_true, D)

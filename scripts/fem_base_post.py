@@ -8,12 +8,12 @@ from scipy import sparse
 from scipy.sparse import linalg
 
 from feat import base
-from feat.base import DirichletBC, NeumannBC
+from feat import boundary as bc
 
 
 def main():
     # SETTINGS
-    mesh_path = "./data/msh/base_large.msh"
+    mesh_path = "./data/msh/base.msh"
 
     # DATA
     element_type = "T3"
@@ -30,9 +30,9 @@ def main():
     nodes = mesh.points.shape[0]
 
     # BOUNDARY CONDITIONS INSTANCES
-    left_side = DirichletBC("left side", mesh, [0], 0.0)
-    bl_corner = DirichletBC("bottom left corner", mesh, [1], 0.0)
-    right_side = DirichletBC("right side", mesh, [0], 1.0)
+    left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
+    bl_corner = bc.DirichletBC("bottom left corner", mesh, [1], 0.0)
+    right_side = bc.DirichletBC("right side", mesh, [0], 1.0)
 
     # ASSEMBLY
     E_array = base.compute_E_array(mesh, cheese)
@@ -45,11 +45,11 @@ def main():
     # print()
 
     # contrained dof rows of K are saved now
-    reaction_dof = base.dirichlet_dof(left_side, bl_corner)
+    reaction_dof = bc.dirichlet_dof(left_side, bl_corner)
     K_rows = K[reaction_dof, :]
 
     # BOUNDARY CONDITIONS APPLICATION
-    K, R = base.apply_dirichlet(K, R, left_side, bl_corner, right_side)
+    K, R = bc.apply_dirichlet(K, R, left_side, bl_corner, right_side)
     # print("K:\n", K)
     # print("R:\n", R)
     # print()

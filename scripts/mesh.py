@@ -1,5 +1,8 @@
 import numpy as np
 
+# TODO fix path for geo files!!!
+# TODO check Angelo tips from composite lecture notes!!!
+
 # SETTINGS
 r = 0.5
 hole_num = 10
