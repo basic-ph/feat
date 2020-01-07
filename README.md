@@ -25,6 +25,12 @@ Necessario perché `pytest` funzioni correttamente, altrimenti va
 utilizzato con il comando ```python -m pytest``` per eseguire i test direttamente 
 contro la copia locale senza usare pip.  
 
+## profile
+from: [snakeviz docs](https://jiffyclub.github.io/snakeviz/#generating-profiles)  
+```
+python -m cProfile -o program.prof my_program.py
+```
+
 ## ~~GMSH python API~~
 from:
 https://gitlab.onelab.info/gmsh/gmsh/blob/master/demos/api/README.txt#L19  
