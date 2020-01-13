@@ -84,8 +84,9 @@ def test_fem():
     E_array = base.compute_E_array(mesh, steel)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
-    for e in range(elements_num):
-        K = base.assembly(K, e, mesh, E_array, thickness, element_type, integration_points)
+    # for e in range(elements_num):
+    #     K = base.assembly(K, e, mesh, E_array, thickness, element_type, integration_points)
+    K = base.assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points)
 
     K, R = bc.apply_dirichlet(K, R, left_side, br_corner)
     R = bc.apply_neumann(R, tr_corner)
@@ -121,8 +122,9 @@ def test_sparse_fem():
     E_array = base.compute_E_array(mesh, steel)
     K = sparse.csc_matrix((2 * nodes, 2 * nodes))
     R = np.zeros(nodes * 2)
-    for e in range(elements_num):
-        K = base.sparse_assembly(K, e, mesh, E_array, thickness, element_type, integration_points)
+    # for e in range(elements_num):
+    #     K = base.sparse_assembly(K, e, mesh, E_array, thickness, element_type, integration_points)
+    K = base.sparse_assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points)
 
     print(K)
     K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, br_corner)

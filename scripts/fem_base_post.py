@@ -13,7 +13,7 @@ from feat import boundary as bc
 
 def main():
     # SETTINGS
-    mesh_path = "./data/msh/huge.msh"
+    mesh_path = "./data/msh/base.msh"
 
     # DATA
     element_type = "T3"
@@ -38,8 +38,7 @@ def main():
     E_array = base.compute_E_array(mesh, cheese)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
-    for e in range(elements_num):
-        K = base.assembly(K, e, mesh, E_array, thickness, element_type, integration_points)
+    K = base.assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points)
     # print("K:\n", K)
     # print("R:\n", R)
     # print()

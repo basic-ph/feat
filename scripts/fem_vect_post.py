@@ -13,7 +13,7 @@ from feat import boundary as bc
 
 def main():
     # SETTINGS
-    mesh_path = "./data/msh/huge.msh"
+    mesh_path = "./data/msh/large.msh"
     
     # DATA
     load_condition = "plane strain"  # "plane stress" or "plane strain"
