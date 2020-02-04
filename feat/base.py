@@ -30,7 +30,7 @@ class Material():
                 0.0,
                 self.young * (1 - self.poisson) / ((1 + self.poisson) * (1 - 2*self.poisson)),
                 0.0,
-               self.young * (1 - self.poisson) / (2 * (1 + self.poisson) * (1 - 2*self.poisson)),
+               self.young * (1 -  2*self.poisson) / (2 * (1 + self.poisson) * (1 - 2*self.poisson)),
             ])
 
         elif load_condition == "plane stress":

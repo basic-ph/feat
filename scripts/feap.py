@@ -16,7 +16,6 @@ def main():
 
     # SETTINGS
     mesh_path = "./data/msh/feap.msh"
-    root.debug(mesh_path)
 
     # DATA
     element_type = "T3"
@@ -60,8 +59,8 @@ def main():
 
     # SOLVER
     D = np.linalg.solve(K, R)
-    # print("D:\n", D)
-    # print()
+    print("D:\n", D)
+    print()
 
     reactions = np.dot(K_rows, D)
     # print("reactions:\n", reactions)

@@ -7,7 +7,7 @@ mesh.field_data: PhysicalNames mappa il nome, la PhysicalTag e la dimensione
 
 import meshio
 
-mesh = meshio.read(r"./data/msh/feap_1.msh")
+mesh = meshio.read(r"./data/msh/feap_2.msh")
 print("mesh.points:\n", mesh.points)
 print()
 print("mesh.cells:\n", mesh.cells)
