@@ -28,7 +28,7 @@ def main():
 
     # MESH
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     nodes = mesh.points.shape[0]
 
     # BOUNDARY CONDITIONS INSTANCES

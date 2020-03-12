@@ -34,9 +34,9 @@ def test_compute_K_entry():
     steel = base.Material(1, 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     nodes = mesh.points.shape[0]
-    elements = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
+    elements = mesh.cells_dict["triangle"]  # elements mapping, n-th row: nodes in n-th element
     coord = mesh.points[:,:2]  # x, y coordinates
     E_array = vector.compute_E_array(mesh, steel)
 
@@ -87,7 +87,7 @@ def test_vect_assembly():
     steel = base.Material(1, 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     nodes = mesh.points.shape[0]
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
@@ -134,7 +134,7 @@ def test_fem():
     steel = base.Material(1, 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     nodes = mesh.points.shape[0]
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)

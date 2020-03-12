@@ -46,7 +46,7 @@ def main():
 
     # MESH
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     nodes = mesh.points.shape[0]
     main_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
 

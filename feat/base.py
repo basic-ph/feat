@@ -53,11 +53,11 @@ class Material():
 
 
 def compute_E_array(mesh, *materials):
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     materials_num = len(materials)
     E_array = np.zeros((elements_num,3,3))  # 3D array composed by E matrix for each element
     E_material = np.zeros((materials_num,3,3))
-    material_map = mesh.cell_data["triangle"]["gmsh:physical"] - 1  # element-material map
+    material_map = mesh.cell_data_dict["gmsh:physical"]["triangle"] - 1  # element-material map
 
     for m in materials:
         # array containing constitutive matrices for each material in mesh
@@ -94,7 +94,7 @@ y = lambda b, i, j: b[i][1] - b[j][1]
 def stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_points):
 
     t = thickness
-    element = mesh.cells["triangle"][e]
+    element = mesh.cells_dict["triangle"][e]
     # print("nodes:\n", element)
     c = mesh.points[:,:2][element]
     # print("coord:\n", c)
@@ -129,7 +129,7 @@ def stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_poin
 
 
 def compute_global_dof(e, mesh):
-    element = mesh.cells["triangle"][e]
+    element = mesh.cells_dict["triangle"][e]
     element_dof = np.zeros(6, dtype=np.int32)  # becomes 12 for T6
     for n in range(element.shape[0]):  # TODO check if applicable for BC
         element_dof[n*2] = element[n] * 2

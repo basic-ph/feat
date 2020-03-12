@@ -2,11 +2,11 @@ import numpy as np
 from scipy import sparse
 
 def compute_E_array(mesh, *materials):
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     materials_num = len(materials)
     E_array = np.zeros((elements_num, 6))
     E_material = np.zeros((materials_num, 6)) # pre-computed array for each material
-    material_map = mesh.cell_data["triangle"]["gmsh:physical"] - 1  # element-material map
+    material_map = mesh.cell_data_dict["gmsh:physical"]["triangle"] - 1  # element-material map
 
     for m in materials:
         # print(m)
@@ -42,8 +42,8 @@ def compute_K_entry(row, col, c, e, E_array, t):
 
 
 def compute_global_dof(mesh, row, col):
-    elements = mesh.cells["triangle"]
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements = mesh.cells_dict["triangle"]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     row_ind = np.zeros((elements_num))
     col_ind = np.zeros((elements_num))
 
@@ -64,8 +64,8 @@ def assembly(mesh, E_array, thickness):
 
     t = thickness
     nodes = mesh.points.shape[0]
-    elements_num = mesh.cells["triangle"].shape[0]
-    elements = mesh.cells["triangle"]  # elements mapping, n-th row: nodes in n-th element
+    elements_num = mesh.cells_dict["triangle"].shape[0]
+    elements = mesh.cells_dict["triangle"]  # elements mapping, n-th row: nodes in n-th element
     coord = mesh.points[:,:2]  # x, y coordinates
 
     k_data = np.zeros((elements_num))

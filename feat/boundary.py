@@ -12,12 +12,12 @@ class BoundaryCondition():
         self.value = value
         if self.dim == 0:
             # array containing indices of elements in the boundary
-            self.elements = np.nonzero(mesh.cell_data["vertex"]["gmsh:physical"] == self.tag)[0]
+            self.elements = np.nonzero(mesh.cell_data_dict["gmsh:physical"]["vertex"] == self.tag)[0]
             # array containing indices of nodes in the boundary
-            self.nodes = unique(mesh.cells["vertex"][self.elements])
+            self.nodes = unique(mesh.cells_dict["vertex"][self.elements])
         elif self.dim == 1:
-            self.elements = np.nonzero(mesh.cell_data["line"]["gmsh:physical"] == self.tag)[0]
-            self.nodes = unique(mesh.cells["line"][self.elements])
+            self.elements = np.nonzero(mesh.cell_data_dict["gmsh:physical"]["line"] == self.tag)[0]
+            self.nodes = unique(mesh.cells_dict["line"][self.elements])
 
     def compute_global_dof(self, nodes, local_dof, dof_num):
         global_dof = np.zeros(dof_num, dtype=np.int32)

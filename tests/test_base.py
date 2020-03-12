@@ -36,7 +36,7 @@ def test_stiffness_matrix():
     steel = base.Material(1, 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     nodes = mesh.points.shape[0]
     E_array = base.compute_E_array(mesh, steel)
 
@@ -74,7 +74,7 @@ def test_fem():
     steel = base.Material(1, 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     nodes = mesh.points.shape[0]
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
@@ -112,7 +112,7 @@ def test_sparse_fem():
     steel = base.Material(1, 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells["triangle"].shape[0]
+    elements_num = mesh.cells_dict["triangle"].shape[0]
     nodes = mesh.points.shape[0]
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
