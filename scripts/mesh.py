@@ -1,91 +1,144 @@
+import sys
+import math
+from pathlib import Path
+
+import meshio
 import numpy as np
-
-# TODO fix path for geo files!!!
-# TODO check Angelo tips from composite lecture notes!!!
-
-# SETTINGS
-r = 0.5
-hole_num = 10
-cl = 1
-hcl = 0.5
-side = 10
-
-min_dist = 3 * r
-offset = 1
+import pygmsh
 
 
-rg = np.random.default_rng()  # accept seed as arg
+def get_fiber_centers(radius, number, side, min_distance, offset, max_iter):
+   
+    rg = np.random.default_rng()  # random generator, accept seed as arg (reproducibility)
+    get_dist = lambda x_0, y_0, x_1, y_1: np.sqrt((x_0 - x_1)**2 + (y_0 - y_1)**2)
 
-dist = lambda x_0, y_0, x_1, y_1: np.sqrt((x_0 - x_1)**2 + (y_0 - y_1)**2)
+    x_array = np.zeros(number)  # array with x coordinate of centers
+    y_array = np.zeros(number)  # array with y coordinate of centers
+    i = 0  # counter for array indexing
+    k = 0  # iterations counter
 
-x_array = np.zeros(hole_num)
-y_array = np.zeros(hole_num)
-valid = np.ones(hole_num, dtype=np.int16)
+    while k < max_iter:
+        k += 1
+        print("k:", k)
+        print("i:", i)
+        valid = True
+        x = offset + (side - 2*offset)* rg.random()
+        y = offset + (side - 2*offset)* rg.random()
 
-i = 0
+        for j in range(i):
+            distance = get_dist(x, y, x_array[j], y_array[j])
+            if distance > min_distance:
+                valid = True
+            else:
+                valid = False
+                break  # exit the loop when the first intersection is found
 
-while True:
+        if valid:  # if no intersection is found center coordinates are added to arrays
+            x_array[i] = x
+            y_array[i] = y
+            i += 1
+        
+        if i == number:
+            break
 
-    print("i:", i)
+    if i < (number -1):
+        sys.exit()
 
-    x = offset + (side - 2*offset)* rg.random()
-    y = offset + (side - 2*offset)* rg.random()
+    return x_array, y_array
 
-    for j in range(i):
-        distance = dist(x, y, x_array[j], y_array[j])
-        if distance > min_dist:
-            valid[j] = 1
-        else:
-            valid[j] = 0
 
-    print("valid", valid)
+def create_mesh(geo_path, mesh_path, radius, number, side, min_distance, offset, max_iter, coarse_cl, fine_cl):
     
-    if 0 in valid:
-        pass
-    else:
-        x_array[i] = x
-        y_array[i] = y
-        i += 1
+    geom = pygmsh.built_in.Geometry()
 
-    if i == hole_num:
-        break
+    # RVE square geometry
+    p0 = geom.add_point([0.0, 0.0, 0.0], coarse_cl)
+    p1 = geom.add_point([side, 0.0, 0.0], coarse_cl)
+    p2 = geom.add_point([side, side, 0.0], coarse_cl)
+    p3 = geom.add_point([0.0, side, 0.0], coarse_cl)
+    
+    l0 = geom.add_line(p0, p1)
+    l1 = geom.add_line(p1, p2)
+    l2 = geom.add_line(p2, p3)
+    l3 = geom.add_line(p3, p0)
+    square_loop = geom.add_line_loop([l0, l1, l2, l3])
+
+    # Fibers geometry
+    x_array, y_array = get_fiber_centers(radius, number, side, min_distance, offset, max_iter)
+    circle_arcs = []  # list of circle arcs that form fibers
+    circle_loops = []  # list of gmsh line loops for fibers
+    fiber_surfaces = []  # list of gmsh surfaces related to fibers
+
+    for n in range(number):
+        center = geom.add_point([x_array[n], y_array[n], 0], coarse_cl)
+        circle = geom.add_circle([x_array[n], y_array[n], 0], radius, lcar=coarse_cl)
+        circle_loops.append(circle.line_loop)
+        geom.add_raw_code(f"Point{{{center.id}}} In Surface{{{circle.plane_surface.id}}};")
+        fiber_surfaces.append(circle.plane_surface)
+        arcs = [line.id for line in circle.line_loop.lines]
+        circle_arcs.extend(arcs)
+
+    square_surface = geom.add_plane_surface(square_loop, holes=circle_loops)  # create matrix surface subtracting circles from square geometry
+
+    # Mesh size Fields (http://gmsh.info/doc/texinfo/gmsh.html#Specifying-mesh-element-sizes)
+    geom.add_raw_code("Field[1] = Distance;")
+    geom.add_raw_code("Field[1].NNodesByEdge = 100;")
+    geom.add_raw_code("Field[1].EdgesList = {{{}}};".format(", ".join(circle_arcs)))
+    geom.add_raw_code("Field[2] = Threshold;\n"
+        "Field[2].IField = 1;\n"
+        f"Field[2].LcMin = {fine_cl};\n"
+        f"Field[2].LcMax = {coarse_cl};\n"
+        "Field[2].DistMin = 0.01;\n"
+        f"Field[2].DistMax = {radius};\n"  # FIXME test this
+        "Background Field = 2;\n"
+    )
+    geom.add_raw_code("Mesh.CharacteristicLengthExtendFromBoundary = 0;\n"
+        "Mesh.CharacteristicLengthFromPoints = 0;\n"
+        "Mesh.CharacteristicLengthFromCurvature = 0;\n"
+    )
+
+    # Physical groups
+    geom.add_physical(square_surface, label="matrix")
+    geom.add_physical(fiber_surfaces, label="fiber")
+    geom.add_physical(l3, label="left side")  # constrained left side
+    geom.add_physical(p0, label="bottom left corner")  # fixed corner
+    geom.add_physical(l1, label="right side")  # imposed displacement right side
+
+    # Gmsh .msh file generation
+    mesh = pygmsh.generate_mesh(
+        geom,
+        geo_filename=str(geo_path),
+        msh_filename=str(mesh_path),
+    )
+    return mesh  # returning meshio Mesh object for further needs
 
 
-print(x_array)
-print(y_array)
+if __name__ == "__main__":
 
-nl = "\n"
-final_curly = "\n};\n" 
-header = (
-    f"//{nl}"
-    f"r = {r};{nl}"
-    f"hole_num = {hole_num};{nl}"
-    f"cl = {cl};{nl}"
-    f"hcl = {hcl};{nl}"
-    f"side = {side};{nl}"
-    f"{nl}"
-    f"{nl}"
-)
+    geo_path = "data/geo/rve_1.geo"
+    mesh_path = "data/msh/rve_1.msh"
+    max_iter = 100000
 
-x_string = "x_array[] = {\n    "
-for k in range(hole_num):
-    if k == hole_num-1:
-        x_string += f"{x_array[k]}"
-    else:
-        x_string += f"{x_array[k]}, "
-   
-x_string += final_curly
+    # RVE logic
+    Vf = 0.30  # fiber volume fraction
+    radius = 1.0
+    number = 30
+    side = math.sqrt(math.pi * radius**2 * number / Vf)
+    print("rve side = ", side)
+    min_distance = 2.1 * radius
+    offset = 1.1 * radius
+    coarse_cl = 0.5
+    fine_cl = coarse_cl / 10
 
-y_string = "y_array[] = {\n    "
-for k in range(hole_num):
-    if k == hole_num-1:
-        y_string += f"{y_array[k]}"
-    else:
-        y_string += f"{y_array[k]}, "
-   
-y_string += final_curly
-
-with open("../gmsh/geo/header.geo", "w") as geo:
-    geo.write(header)
-    geo.write(x_string)
-    geo.write(y_string)
+    mesh = create_mesh(
+        geo_path,
+        mesh_path,
+        radius,
+        number,
+        side,
+        min_distance,
+        offset,
+        max_iter,
+        coarse_cl,
+        fine_cl
+    )
