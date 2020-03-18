@@ -49,7 +49,7 @@ def test_feap_1():
     main_log.info("THICKNESS: %s", thickness)
 
     # MATERIAL
-    cheese = base.Material(1, 70, 0.3, load_condition)  #FIXME
+    cheese = base.Material("cheese", 70, 0.3, load_condition)  #FIXME
     main_log.info("MATERIALS: TODO")
 
     # MESH
@@ -148,7 +148,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.info("THICKNESS: %s", thickness)
 
     # MATERIAL
-    cheese = base.Material(1, 10, poisson, load_condition)  #FIXME
+    rubber = base.Material("rubber", 10, poisson, load_condition)  #FIXME
     main_log.info("MATERIALS: TODO")
 
     # MESH
@@ -165,7 +165,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_array = base.compute_E_array(mesh, cheese)
+    E_array = base.compute_E_array(mesh, rubber)
     main_log.debug("E array:\n %s\n", E_array)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)

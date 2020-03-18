@@ -31,7 +31,7 @@ def main():
     feat_log.addHandler(feat_handler)
 
     # SETTINGS
-    mesh_path = "./data/msh/large.msh"
+    mesh_path = "./data/msh/base.msh"
     main_log.info("MESH FILE: %s", mesh_path)
 
     # DATA
@@ -41,7 +41,7 @@ def main():
     main_log.info("THICKNESS: %s", thickness)
 
     # MATERIAL
-    cheese = base.Material(1, 70, 0.3, load_condition)
+    cheese = base.Material("cheese", 70, 0.3, load_condition)
     main_log.info("MATERIALS: TODO")
 
     # MESH
@@ -58,6 +58,7 @@ def main():
 
     # ASSEMBLY
     E_array = vector.compute_E_array(mesh, cheese)
+    main_log.info("E_array:\n %s", E_array)
     R = np.zeros(nodes * 2)
     K = vector.assembly(mesh, E_array, thickness)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K)

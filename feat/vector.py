@@ -9,8 +9,8 @@ def compute_E_array(mesh, *materials):
     material_map = mesh.cell_data_dict["gmsh:physical"]["triangle"] - 1  # element-material map
 
     for m in materials:
-        # print(m)
-        E_material[m.tag] = m.E_flat
+        tag = mesh.field_data[m.name][0] - 1   # convert to zero offset from unit offset (gmsh)
+        E_material[tag] = m.E_flat
     
     E_array = E_material[material_map]
     return E_array

@@ -12,7 +12,7 @@ from feat import vector
 def test_compute_E_array():
     mesh_path = "tests/data/msh/test.msh"
     load_condition = "plane stress"  # "plane stress" or "plane strain"
-    steel = base.Material(1, 3e7, 0.25, load_condition)
+    steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)    
     E_array = base.compute_E_array(mesh, steel)
@@ -33,7 +33,7 @@ def test_stiffness_matrix():
     integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
-    steel = base.Material(1, 3e7, 0.25, load_condition)
+    steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict["triangle"].shape[0]
@@ -71,7 +71,7 @@ def test_fem():
     integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
-    steel = base.Material(1, 3e7, 0.25, load_condition)
+    steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict["triangle"].shape[0]
@@ -109,7 +109,7 @@ def test_sparse_fem():
     integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
-    steel = base.Material(1, 3e7, 0.25, load_condition)
+    steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict["triangle"].shape[0]

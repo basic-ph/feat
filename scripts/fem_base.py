@@ -43,7 +43,7 @@ def main():
     main_log.info("THICKNESS: %s", thickness)
 
     # MATERIAL
-    cheese = base.Material(1, 70, 0.3, load_condition)  #FIXME
+    cheese = base.Material("cheese", 70, 0.3, load_condition)  #FIXME
     main_log.info("MATERIALS: TODO")
 
     # MESH
@@ -60,6 +60,7 @@ def main():
 
     # ASSEMBLY
     E_array = base.compute_E_array(mesh, cheese)
+    main_log.info("E_array:\n %s", E_array)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
     K = base.assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points)

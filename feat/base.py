@@ -7,8 +7,8 @@ from numpy.linalg import det, inv
 
 class Material():
 
-    def __init__(self, gmsh_tag, young_modulus, poisson_ratio, load_condition):
-        self.tag = gmsh_tag - 1  # convert to zero offset from unit offset (gmsh)
+    def __init__(self, name, young_modulus, poisson_ratio, load_condition):
+        self.name = name
         self.young = young_modulus
         self.poisson = poisson_ratio
 
@@ -56,12 +56,13 @@ def compute_E_array(mesh, *materials):
     elements_num = mesh.cells_dict["triangle"].shape[0]
     materials_num = len(materials)
     E_array = np.zeros((elements_num,3,3))  # 3D array composed by E matrix for each element
-    E_material = np.zeros((materials_num,3,3))
+    E_material = np.zeros((materials_num,3,3)) # 3D array composed by E matrix for each material
     material_map = mesh.cell_data_dict["gmsh:physical"]["triangle"] - 1  # element-material map
 
     for m in materials:
+        tag = mesh.field_data[m.name][0] - 1   # convert to zero offset from unit offset (gmsh)
         # array containing constitutive matrices for each material in mesh
-        E_material[m.tag,:,:] = m.E_full
+        E_material[tag,:,:] = m.E_full
 
     E_array = E_material[material_map]
     return E_array

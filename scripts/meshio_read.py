@@ -7,13 +7,13 @@ mesh.field_data: PhysicalNames mappa il nome, la PhysicalTag e la dimensione
 
 import meshio
 
-mesh = meshio.read(r"./data/msh/base.msh")
-print("mesh.points:\n", mesh.points)
-print()
-print("mesh.cells_dict:\n", mesh.cells_dict)
-print()
-print("mesh.cell_data_dict:", mesh.cell_data_dict)
-print()
+mesh = meshio.read(r"./data/msh/rve_1.msh")
+# print("mesh.points:\n", mesh.points)
+# print()
+# print("mesh.cells_dict:\n", mesh.cells_dict)
+# print()
+# print("mesh.cell_data_dict:", mesh.cell_data_dict)
+# print()
 print("mesh.field_data: ", mesh.field_data)
 
 # mesh.points:

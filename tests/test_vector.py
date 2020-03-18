@@ -11,8 +11,8 @@ from feat import vector
 def test_compute_E_array():
     mesh_path = "tests/data/msh/test_mat.msh"
     load_condition = "plane stress"  # "plane stress" or "plane strain"
-    steel = base.Material(1, 3e7, 0.25, load_condition)
-    aluminum = base.Material(2, 1e7, 0.35, load_condition)
+    steel = base.Material("steel", 3e7, 0.25, load_condition)
+    aluminum = base.Material("aluminum", 1e7, 0.35, load_condition)
     
     mesh = meshio.read(mesh_path)
 
@@ -31,7 +31,7 @@ def test_compute_K_entry():
     integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
-    steel = base.Material(1, 3e7, 0.25, load_condition)
+    steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict["triangle"].shape[0]
@@ -84,7 +84,7 @@ def test_vect_assembly():
     mesh_path = "tests/data/msh/test.msh"
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
-    steel = base.Material(1, 3e7, 0.25, load_condition)
+    steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict["triangle"].shape[0]
@@ -131,7 +131,7 @@ def test_fem():
     integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
-    steel = base.Material(1, 3e7, 0.25, load_condition)
+    steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict["triangle"].shape[0]
