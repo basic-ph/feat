@@ -41,6 +41,7 @@ def test_feap_1():
     main_log.info("MESH FILE: %s", mesh_path)
 
     # DATA
+    element_type = "triangle"
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
     main_log.info("LOAD CONDITION: %s", load_condition)
@@ -52,7 +53,7 @@ def test_feap_1():
 
     # MESH
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict["triangle"].shape[0]
+    elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
     main_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
 
@@ -63,9 +64,9 @@ def test_feap_1():
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_array = vector.compute_E_array(mesh, cheese)
+    E_array = vector.compute_E_array(mesh, element_type, cheese)
     R = np.zeros(nodes * 2)
-    K = vector.assembly(mesh, E_array, thickness)
+    K = vector.assembly(mesh, element_type, E_array, thickness)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K)
 
     # save constrained dof rows of K
@@ -137,6 +138,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.info("MESH FILE: %s", mesh_path)
 
     # DATA
+    element_type = "triangle"
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
     main_log.info("LOAD CONDITION: %s", load_condition)
@@ -148,7 +150,7 @@ def test_feap_2(poisson, D_true, reactions_true):
 
     # MESH
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict["triangle"].shape[0]
+    elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
     main_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
 
@@ -160,10 +162,10 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_array = vector.compute_E_array(mesh, rubber)
+    E_array = vector.compute_E_array(mesh, element_type, rubber)
     main_log.debug("E array:\n %s\n", E_array)
     R = np.zeros(nodes * 2)
-    K = vector.assembly(mesh, E_array, thickness)
+    K = vector.assembly(mesh, element_type, E_array, thickness)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K.todense())
 
     # save constrained dof rows of K

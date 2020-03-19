@@ -9,6 +9,7 @@ from feat import vector
 
 
 def test_compute_E_array():
+    element_type = "triangle"
     mesh_path = "tests/data/msh/test_mat.msh"
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     steel = base.Material("steel", 3e7, 0.25, load_condition)
@@ -16,7 +17,7 @@ def test_compute_E_array():
     
     mesh = meshio.read(mesh_path)
 
-    E_array = vector.compute_E_array(mesh, steel, aluminum)
+    E_array = vector.compute_E_array(mesh, element_type, steel, aluminum)
     E_array_true = np.array([
         (32000000., 8000000., 0., 32000000., 0., 12000000.),
         (11396011.3960114, 3988603.98860399, 0., 11396011.3960114, 0., 3703703.7037037),
@@ -27,18 +28,18 @@ def test_compute_E_array():
 def test_compute_K_entry():
     mesh_path = "tests/data/msh/test.msh"
     
-    element_type = "T3"
+    element_type = "triangle"
     integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict["triangle"].shape[0]
+    elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
     elements = mesh.cells_dict["triangle"]  # elements mapping, n-th row: nodes in n-th element
     coord = mesh.points[:,:2]  # x, y coordinates
-    E_array = vector.compute_E_array(mesh, steel)
+    E_array = vector.compute_E_array(mesh, element_type, steel)
 
     row_0, col_0 = np.unravel_index(0, (6,6))
     k_0 = vector.compute_K_entry(row_0, col_0, coord, elements, E_array, thickness)
@@ -54,11 +55,12 @@ def test_compute_K_entry():
 
 
 def test_compute_global_dof():
+    element_type = "triangle"
     mesh_path = "tests/data/msh/test.msh"
     mesh = meshio.read(mesh_path)
 
     row, col = np.unravel_index(8, (6,6))
-    row_ind, col_ind = vector.compute_global_dof(mesh, row, col)
+    row_ind, col_ind = vector.compute_global_dof(mesh, element_type, row, col)
 
     row_ind_true = np.array([1, 1])
     col_ind_true = np.array([2, 4])
@@ -71,7 +73,7 @@ def test_compute_global_dof():
     del row_ind_true; del col_ind_true;
     
     row, col = np.unravel_index(29, (6,6))
-    row_ind, col_ind = vector.compute_global_dof(mesh, row, col)
+    row_ind, col_ind = vector.compute_global_dof(mesh, element_type, row, col)
 
     row_ind_true = np.array([4, 6])
     col_ind_true = np.array([5, 7])
@@ -82,21 +84,22 @@ def test_compute_global_dof():
 
 def test_vect_assembly():
     mesh_path = "tests/data/msh/test.msh"
+    element_type = "triangle"
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict["triangle"].shape[0]
+    elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
 
-    E_array = vector.compute_E_array(mesh, steel)
+    E_array = vector.compute_E_array(mesh, element_type, steel)
     R = np.zeros(nodes * 2)
-    K = vector.assembly(mesh, E_array, thickness)
+    K = vector.assembly(mesh, element_type, E_array, thickness)
     K_true = np.array([
         [9833333.33333333, 0., -5333333.33333333, 2000000., 0., -5000000., -4500000., 3000000.],
         [0., 14000000., 3000000., -2000000., -5000000., 0.,  2000000.,-12000000.],
@@ -128,22 +131,23 @@ def test_vect_assembly():
 def test_fem():
     mesh_path = "tests/data/msh/test.msh"
     
+    element_type = "triangle"
     integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict["triangle"].shape[0]
+    elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
 
-    E_array = vector.compute_E_array(mesh, steel)
+    E_array = vector.compute_E_array(mesh, element_type, steel)
     R = np.zeros(nodes * 2)
-    K = vector.assembly(mesh, E_array, thickness)
+    K = vector.assembly(mesh, element_type, E_array, thickness)
 
     K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, br_corner)
     R = bc.apply_neumann(R, tr_corner)

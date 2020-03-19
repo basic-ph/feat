@@ -52,12 +52,12 @@ class Material():
             ])
 
 
-def compute_E_array(mesh, *materials):
-    elements_num = mesh.cells_dict["triangle"].shape[0]
+def compute_E_array(mesh, element_type, *materials):
+    elements_num = mesh.cells_dict[element_type].shape[0]
     materials_num = len(materials)
     E_array = np.zeros((elements_num,3,3))  # 3D array composed by E matrix for each element
     E_material = np.zeros((materials_num,3,3)) # 3D array composed by E matrix for each material
-    material_map = mesh.cell_data_dict["gmsh:physical"]["triangle"] - 1  # element-material map
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
 
     for m in materials:
         tag = mesh.field_data[m.name][0] - 1   # convert to zero offset from unit offset (gmsh)
@@ -69,7 +69,7 @@ def compute_E_array(mesh, *materials):
 
 
 def gauss_quadrature(element_type, integration_points):
-    if element_type == "T3":
+    if element_type == "triangle":
         if integration_points == 1:
             weights = np.array([1])
             locations = np.array([(1/3, 1/3)])
@@ -82,9 +82,22 @@ def gauss_quadrature(element_type, integration_points):
                     (1/6, 2/3),
                 ]
             )
-    elif element_type == "T6":
-        print("ERROR -- T6 element not implemented!!!")
-        sys.exit()
+    elif element_type == "triangle6":
+        if integration_points == 3:
+            weights = np.array([1/3, 1/3, 1/3])
+            locations = np.array([
+                [2/3, 1/6, 1/6],
+                [1/6, 2/3, 1/6],
+                [1/6, 1/6, 2/3],
+            ])
+            # locations = np.array([
+            #     [1/2, 1/2, 0.0],
+            #     [0.0, 1/2, 1/2],
+            #     [1/2, 0.0, 1/2],
+            # ])
+        else:
+            print("ERROR -- for T6 only 3 point rule is supported!!!")
+            sys.exit()
     return weights, locations
 
 
@@ -95,42 +108,76 @@ y = lambda b, i, j: b[i][1] - b[j][1]
 def stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_points):
 
     t = thickness
-    element = mesh.cells_dict["triangle"][e]
-    # print("nodes:\n", element)
+    element = mesh.cells_dict[element_type][e]
+    print("nodes:\n", element.shape[0])
     c = mesh.points[:,:2][element]
-    # print("coord:\n", c)
+    print("coord:\n", c)
  
     E = E_array[e]
-    # print("E:\n", E)
+    print("E:\n", E)
 
     # element/local stiffness matrix
-    k = np.zeros((6, 6))  # for T6 --> 12 by 12
+    k = np.zeros((2*element.shape[0], 2*element.shape[0]))  # for T6 --> 12 by 12
+    print("k shape ", k.shape)
 
     weights, locations = gauss_quadrature(element_type, integration_points)
     # print(weights)
     # print(locations)
-    for p in range(weights.shape[0]):
-        w = weights[p]
-        loc = locations[p]  # this is a [x, y] array
-
+    if element_type == "triangle":
+        w = weights[0]
         j = ( (c[1][0] - c[0][0]) * (c[2][1] - c[0][1])  # det of jacobian matrix
             - (c[2][0] - c[0][0]) * (c[1][1] - c[0][1])
         )
-        # print("j",j)
         B = (1/j) * np.array([
             (y(c, 1, 2), 0, y(c, 2, 0), 0, y(c, 0, 1), 0),
             (0, x(c, 2, 1), 0, x(c, 0, 2), 0 , x(c, 1, 0)),
             (x(c, 2, 1), y(c, 1, 2), x(c, 0, 2), y(c, 2, 0), x(c, 1, 0), y(c, 0, 1))
         ])
-        # print("B", B)
-        k_integral = B.T @ E @ B * t * 0.5 * j * w
-        k += k_integral
+        k = B.T @ E @ B * t * 0.5 * j
+
+    elif element_type == "triangle6":
+        np.set_printoptions(linewidth=200)
+        print("calculating k local for triangle 6")
+        for p in range(integration_points):  # weights.shape[0]
+            w = weights[p]
+            z = locations[p]  # location in triangular coord: [z1, z2, z3]
+            print("IP number", p)
+            print("weight", w)
+            print("loc", z)
+            print("loc", z[0], z[1], z[2])
+
+            j = 0.5 * (x(c,1,0) * y(c,2,0) - y(c,0,1)*x(c,0,2))
+            print("j", j)
+
+            dNx1 = (4*z[0] - 1) * y(c,1,2) / (2 * j)
+            dNx2 = (4*z[1] - 1) * y(c,2,0) / (2 * j)
+            dNx3 = (4*z[2] - 1) * y(c,0,1) / (2 * j)
+            dNx4 = 4 * (z[1] * y(c,1,2) + z[0] * y(c,2,0)) / (2 * j)
+            dNx5 = 4 * (z[2] * y(c,2,0) + z[1] * y(c,0,1)) / (2 * j)
+            dNx6 = 4 * (z[0] * y(c,0,1) + z[2] * y(c,1,2)) / (2 * j)
+
+            dNy1 = (4*z[0] - 1) * x(c,2,1) / (2 * j)
+            dNy2 = (4*z[0] - 1) * x(c,0,2) / (2 * j)
+            dNy3 = (4*z[0] - 1) * x(c,1,0) / (2 * j)
+            dNy4 = 4 * (z[1] * x(c,2,1) + z[0] * x(c,0,2)) / (2 * j)
+            dNy5 = 4 * (z[2] * x(c,0,2) + z[1] * x(c,1,0)) / (2 * j)
+            dNy6 = 4 * (z[0] * x(c,1,0) + z[2] * x(c,2,1)) / (2 * j)
+
+            B = np.array([
+                [dNx1, 0, dNx2, 0, dNx3, 0, dNx4, 0, dNx5, 0, dNx6, 0],
+                [ 0, dNy1, 0, dNy2, 0, dNy3, 0, dNy4, 0, dNy5, 0, dNy6],
+                [dNy1, dNx1, dNy2, dNx2, dNy3, dNx3, dNy4, dNx4, dNy5, dNx5, dNy6, dNx6]
+            ])
+
+            k_integral = B.T @ E @ B * t * j * w
+            # print("k integral\n", k_integral)
+            k += k_integral
 
     return k
 
 
-def compute_global_dof(e, mesh):
-    element = mesh.cells_dict["triangle"][e]
+def compute_global_dof(e, mesh, element_type):
+    element = mesh.cells_dict[element_type][e]
     element_dof = np.zeros(6, dtype=np.int32)  # becomes 12 for T6
     for n in range(element.shape[0]):  # TODO check if applicable for BC
         element_dof[n*2] = element[n] * 2
@@ -142,7 +189,7 @@ def assembly(K, elements_num, mesh, E_array, thickness, element_type, integratio
 
     for e in range(elements_num):
         k = stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_points)
-        element_dof = compute_global_dof(e, mesh)
+        element_dof = compute_global_dof(e, mesh, element_type)
         for i in range(6):  # becomes 12 for T6
             I = element_dof[i]
             for j in range(6):  # becomes 12 for T6
@@ -156,7 +203,7 @@ def sparse_assembly(K, elements_num, mesh, E_array, thickness, element_type, int
     for e in range(elements_num):
         k = stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_points)
         k_data = np.ravel(k)  # flattened 6x6 local matrix
-        element_dof = compute_global_dof(e, mesh)
+        element_dof = compute_global_dof(e, mesh, element_type)
 
         row_ind = np.repeat(element_dof, 6)
         col_ind = np.tile(element_dof, 6)

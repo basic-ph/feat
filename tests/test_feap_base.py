@@ -41,7 +41,7 @@ def test_feap_1():
     main_log.info("MESH FILE: %s", mesh_path)
 
     # DATA
-    element_type = "T3"
+    element_type = "triangle"
     integration_points = 1
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
@@ -54,7 +54,7 @@ def test_feap_1():
 
     # MESH
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict["triangle"].shape[0]
+    elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
     main_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
 
@@ -65,7 +65,7 @@ def test_feap_1():
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_array = base.compute_E_array(mesh, cheese)
+    E_array = base.compute_E_array(mesh, element_type, cheese)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
     K = base.assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points)
@@ -140,7 +140,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.info("MESH FILE: %s", mesh_path)
 
     # DATA
-    element_type = "T3"
+    element_type = "triangle"
     integration_points = 1
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
@@ -153,7 +153,7 @@ def test_feap_2(poisson, D_true, reactions_true):
 
     # MESH
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict["triangle"].shape[0]
+    elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
     main_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
 
@@ -165,7 +165,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_array = base.compute_E_array(mesh, rubber)
+    E_array = base.compute_E_array(mesh, element_type, rubber)
     main_log.debug("E array:\n %s\n", E_array)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)

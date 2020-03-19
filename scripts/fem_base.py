@@ -35,7 +35,7 @@ def main():
     main_log.info("MESH FILE: %s", mesh_path)
 
     # DATA
-    element_type = "T3"
+    element_type = "triangle"
     integration_points = 1
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
@@ -48,7 +48,7 @@ def main():
 
     # MESH
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict["triangle"].shape[0]
+    elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
     main_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
 
@@ -59,7 +59,7 @@ def main():
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_array = base.compute_E_array(mesh, cheese)
+    E_array = base.compute_E_array(mesh, element_type, cheese)
     main_log.info("E_array:\n %s", E_array)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
