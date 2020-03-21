@@ -7,7 +7,9 @@ from scipy.sparse import linalg
 from feat import base
 from feat import boundary as bc
 from feat import vector
+from feat import T6
 
+@pytest.mark.skip()
 def test_stiffness_matrix():
     mesh_path = "tests/data/msh/felippa_t6.msh"
 
@@ -23,6 +25,7 @@ def test_stiffness_matrix():
     nodes = mesh.points.shape[0]
     E_array = base.compute_E_array(mesh, element_type, berillium)
 
+    # k_0 = T6.stiffness_matrix(0, mesh, E_array, thickness, element_type, integration_points)
     k_0 = base.stiffness_matrix(0, mesh, E_array, thickness, element_type, integration_points)
 
     k_0_true = np.array([
@@ -37,10 +40,10 @@ def test_stiffness_matrix():
     np.set_printoptions(linewidth=200)
     
     print(k_0)
-    limit = 1e-12
-    over_limit = abs(k_0) < limit
-    print("over lim\n", over_limit)
-    k_0[over_limit] = 0.0
-    print(k_0)
+    # limit = 1e-12
+    # over_limit = abs(k_0) < limit
+    # print("over lim\n", over_limit)
+    # k_0[over_limit] = 0.0
+    # print(k_0)
     assert False
     # np.testing.assert_allclose(k_0_true, k_0)
