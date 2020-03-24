@@ -1,45 +1,53 @@
 
+import csv
 import matplotlib.pyplot as plt
+import numpy as np
 
 
-storage = [
-    [1, 0, 1, 7.2360125455826765, 691, 168.41855098587814],
-    [1, 1, 1, 7.2360125455826765, 658, 173.2679679494225],
-    [1, 2, 1, 7.2360125455826765, 665, 164.93121409401215],
-    [1, 3, 1, 7.2360125455826765, 680, 172.25579267556324],
-    [1, 4, 1, 7.2360125455826765, 688, 170.72295486359505],
-    [1, 5, 1, 7.2360125455826765, 668, 162.30783612401578],
-    [1, 6, 1, 7.2360125455826765, 663, 160.7817741396752],
-    [1, 7, 1, 7.2360125455826765, 681, 178.130227305097],
-    [1, 8, 1, 7.2360125455826765, 676, 167.04410553088505],
-    [1, 9, 1, 7.2360125455826765, 660, 165.2143342548814],
-    [2, 0, 1, 10.233267079464886, 1325, 165.63761512588016],
-    [2, 1, 1, 10.233267079464886, 1332, 163.9340669542866],
-    [2, 2, 1, 10.233267079464886, 1335, 167.42234691604776],
-    [2, 3, 1, 10.233267079464886, 1322, 165.61604692152187],
-    [2, 4, 1, 10.233267079464886, 1323, 168.75904994444906],
-    [2, 5, 1, 10.233267079464886, 1318, 164.77573845748356],
-    [2, 6, 1, 10.233267079464886, 1335, 165.3088169250544],
-    [2, 7, 1, 10.233267079464886, 1320, 164.56436288118303],
-    [2, 8, 1, 10.233267079464886, 1346, 167.22548037681884],
-    [2, 9, 1, 10.233267079464886, 1342, 167.21020877207982],
-]
-refined_storage = [
-    [1, 7.2360125455826765, 168.30747579230257],
-    [2, 10.233267079464886, 166.04537332748052],
-]
+storage = []
+with open('rve_2020-03-24T174738.csv', 'r', newline='') as file:
+    reader = csv.reader(file, quoting=csv.QUOTE_NONNUMERIC)
+    for row in reader:
+        storage.append(row)
 
 rve_1_r = [l[1] for l in storage if l[0] == 1]
 rve_1_E2 = [l[5] for l in storage if l[0] == 1]
 rve_2_r = [l[1] for l in storage if l[0] == 2]
 rve_2_E2 = [l[5] for l in storage if l[0] == 2]
-print(rve_1_r)
-print(rve_1_E2)
 
+refined_storage = [
+    [1, 7.2360125455826765, 169.1960679013824],  # not validated
+    [2, 10.233267079464886, 169.3692911969456],  # validated
+]
+rve_1_mean_E2 = refined_storage[0][2]
+rve_1_threshold = 0.05 *  rve_1_mean_E2 # 5% of the mean
+rve_1_up_lim = rve_1_mean_E2 + rve_1_threshold
+rve_1_low_lim = rve_1_mean_E2 - rve_1_threshold
+
+rve_2_mean_E2 = refined_storage[1][2]
+rve_2_threshold = 0.05 *  rve_2_mean_E2 # 5% of the mean
+rve_2_up_lim = rve_2_mean_E2 + rve_2_threshold
+rve_2_low_lim = rve_2_mean_E2 - rve_2_threshold
+
+# PLOT
 plt.ioff()
-fig, ax = plt.subplots()
-ax.plot(rve_1_r, rve_1_E2, label='RVE 1')  # Plot some data on the axes.
-ax.plot(rve_2_r, rve_2_E2, label='RVE 2')  # Plot some data on the axes.
-ax.legend()  # Add a legend.
+x = np.linspace(0, 10, 11)
+
+fig, (ax1, ax2) = plt.subplots(1, 2, sharey=False)
+
+ax1.plot(rve_1_r, rve_1_E2, ".", label='RVE 1')  # Plot some data on the axes.
+ax1.axhline(rve_1_mean_E2, xmin=0, xmax=10, linestyle="--")
+ax1.fill_between(x, rve_1_up_lim, rve_1_low_lim, alpha=0.2)
+ax1.set_ylim(rve_1_mean_E2 - 0.10 * rve_1_mean_E2, rve_1_mean_E2 + 0.10 * rve_1_mean_E2)
+ax1.set_title('TITLE')
+ax1.legend()  # Add a legend.
+
+ax2.plot(rve_2_r, rve_2_E2, ".", label='RVE 2')  # Plot some data on the axes.
+ax2.axhline(rve_2_mean_E2, xmin=0, xmax=10, linestyle="--")
+ax2.fill_between(x, rve_2_up_lim, rve_2_low_lim, alpha=0.2)
+ax2.set_ylim(rve_2_mean_E2 - 0.10 * rve_2_mean_E2, rve_2_mean_E2 + 0.10 * rve_2_mean_E2)
+ax1.set_title('TITLE')
+ax2.legend()  # Add a legend.
 
 plt.show()
+

@@ -1,6 +1,8 @@
 import argparse
+import csv
 import logging
 import math
+from datetime import datetime
 from pathlib import Path
 from statistics import mean, stdev
 
@@ -153,7 +155,12 @@ def main():
     
     rve_log.info("Stored data:\n%s", storage)
     rve_log.info("Stored refined data:\n%s", refined_storage)
-
+    
+    date = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
+    data_file = "rve_" + date + ".csv"
+    with open(data_file, 'w', newline='') as file:
+        writer = csv.writer(file, quoting=csv.QUOTE_NONNUMERIC)
+        writer.writerows(storage)
 
 if __name__ == "__main__":
     main()
