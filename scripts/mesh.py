@@ -19,8 +19,6 @@ def get_fiber_centers(radius, number, side, min_distance, offset, max_iter):
 
     while k < max_iter:
         k += 1
-        print("k:", k)
-        print("i:", i)
         valid = True
         x = offset + (side - 2*offset)* rg.random()
         y = offset + (side - 2*offset)* rg.random()
@@ -47,7 +45,7 @@ def get_fiber_centers(radius, number, side, min_distance, offset, max_iter):
     return x_array, y_array
 
 
-def create_mesh(geo_path, mesh_path, radius, number, side, min_distance, offset, max_iter, coarse_cl, fine_cl):
+def create_mesh(geo_path, msh_path, radius, number, side, x_array, y_array, coarse_cl, fine_cl):
     
     geom = pygmsh.built_in.Geometry()
 
@@ -64,7 +62,6 @@ def create_mesh(geo_path, mesh_path, radius, number, side, min_distance, offset,
     square_loop = geom.add_line_loop([l0, l1, l2, l3])
 
     # Fibers geometry
-    x_array, y_array = get_fiber_centers(radius, number, side, min_distance, offset, max_iter)
     circle_arcs = []  # list of circle arcs that form fibers
     circle_loops = []  # list of gmsh line loops for fibers
     fiber_surfaces = []  # list of gmsh surfaces related to fibers
@@ -108,7 +105,9 @@ def create_mesh(geo_path, mesh_path, radius, number, side, min_distance, offset,
     mesh = pygmsh.generate_mesh(
         geom,
         geo_filename=str(geo_path),
-        msh_filename=str(mesh_path),
+        msh_filename=str(msh_path),
+        verbose=False,
+        dim=2,
     )
     return mesh  # returning meshio Mesh object for further needs
 
@@ -116,29 +115,30 @@ def create_mesh(geo_path, mesh_path, radius, number, side, min_distance, offset,
 if __name__ == "__main__":
 
     geo_path = "data/geo/rve_1.geo"
-    mesh_path = "data/msh/rve_1.msh"
+    msh_path = "data/msh/rve_1.msh"
     max_iter = 100000
 
     # RVE logic
     Vf = 0.30  # fiber volume fraction
     radius = 1.0
-    number = 30
+    number = 10
     side = math.sqrt(math.pi * radius**2 * number / Vf)
     print("rve side = ", side)
     min_distance = 2.1 * radius
     offset = 1.1 * radius
     coarse_cl = 0.5
-    fine_cl = coarse_cl / 10
+    fine_cl = coarse_cl / 5
+
+    x_array, y_array = get_fiber_centers(radius, number, side, min_distance, offset, max_iter)
 
     mesh = create_mesh(
         geo_path,
-        mesh_path,
+        msh_path,
         radius,
         number,
         side,
-        min_distance,
-        offset,
-        max_iter,
+        x_array,
+        y_array,
         coarse_cl,
         fine_cl
     )

@@ -112,16 +112,16 @@ def stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_poin
 
     t = thickness
     element = mesh.cells_dict[element_type][e]
-    print("nodes:\n", element.shape[0])
+    # print("nodes:\n", element.shape[0])
     c = mesh.points[:,:2][element]
-    print("coord:\n", c)
+    # print("coord:\n", c)
  
     E = E_array[e]
-    print("E:\n", E)
+    # print("E:\n", E)
 
     # element/local stiffness matrix
     k = np.zeros((2*element.shape[0], 2*element.shape[0]))  # for T6 --> 12 by 12
-    print("k shape ", k.shape)
+    # print("k shape ", k.shape)
 
     weights, locations = gauss_quadrature(element_type, integration_points)
     # print(weights)
@@ -144,13 +144,13 @@ def stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_poin
         for p in range(integration_points):  # weights.shape[0]
             w = weights[p]
             z = locations[p]  # location in triangular coord: [z1, z2, z3]
-            print("IP number", p)
-            print("weight", w)
-            print("loc", z)
-            print("loc", z[0], z[1], z[2])
+            # print("IP number", p)
+            # print("weight", w)
+            # print("loc", z)
+            # print("loc", z[0], z[1], z[2])
 
             j = 0.5 * (x(c,1,0) * y(c,2,0) - y(c,0,1)*x(c,0,2))
-            print("j", j)
+            # print("j", j)
 
             dNx1 = (4*z[0] - 1) * y(c,1,2) / (2 * j)
             dNx2 = (4*z[1] - 1) * y(c,2,0) / (2 * j)

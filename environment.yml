@@ -8,3 +8,4 @@ dependencies:
   - scipy
   - snakeviz
   - conda-forge::meshio
+  - conda-forge::matplotlib

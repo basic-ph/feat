@@ -44,7 +44,7 @@ def main():
     # main_log.info("THICKNESS: %s", thickness)
 
     # MATERIAL
-    cheese = base.Material("cheese", 70, 0.3, load_condition)  #FIXME
+    cheese = base.Material("cheese", 70, 0.3, load_condition)
     # main_log.info("MATERIALS: TODO")
 
     # MESH
