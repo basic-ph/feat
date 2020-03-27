@@ -104,8 +104,8 @@ def create_mesh(geo_path, msh_path, radius, number, side, x_array, y_array, coar
     # Gmsh .msh file generation
     mesh = pygmsh.generate_mesh(
         geom,
-        geo_filename=str(geo_path),
-        msh_filename=str(msh_path),
+        # geo_filename=str(geo_path),  # uncomment this for saving geo and msh
+        # msh_filename=str(msh_path),
         verbose=False,
         dim=2,
     )

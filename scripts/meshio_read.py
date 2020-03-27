@@ -1,34 +1,67 @@
-"""
-mesh.points: array dei nodi con loro coordinate
-mesh.cells_dict:dict con elementi divisi per tipo e array con nodi (zero-based) per ciascun elemento
-mesh.cell_data_dict: PhysicalTag degli elementi suddivisi per tipo
-mesh.field_data: PhysicalNames mappa il nome, la PhysicalTag e la dimensione
-"""
-
 import meshio
 
-mesh = meshio.read(r"./data/msh/rve_1.msh")
-# print("mesh.points:\n", mesh.points)
-# print()
-# print("mesh.cells_dict:\n", mesh.cells_dict)
-# print()
-# print("mesh.cell_data_dict:", mesh.cell_data_dict)
-# print()
-print("mesh.field_data: ", mesh.field_data)
+mesh = meshio.read("./data/msh/base.msh")  # change me
 
+print("mesh.points:\n", mesh.points)
+# OUTPUT
 # mesh.points:
 #  [[0. 0. 0.]
 #  [2. 0. 0.]
 #  [2. 2. 0.]
-#  [0. 2. 0.]]
+#  [0. 2. 0.]
+#  [1. 1. 0.]]
+# node coordinates in 3D space as [x, y, z]
 
-# mesh.cells_dict:
-#  {'vertex': array([[0],
-#        [1],
-#        [2],
-#        [3]]), 'triangle': array([[0, 1, 2],
-#        [0, 2, 3]])}
+print("mesh.cells:\n", mesh.cells)
+# OUTPUT
+# mesh.cells: # 
+#  [CellBlock(type='vertex', data=array([[0]])), 
+#   CellBlock(type='line', data=array([[1, 2]])), 
+#   CellBlock(type='line', data=array([[3, 0]])), 
+#   CellBlock(type='triangle', data=array([  
+#        [0, 1, 4], ---> [node1, node2, node3] forming the first 3-node triangle
+#        [3, 0, 4],
+#        [1, 2, 4],
+#        [2, 3, 4]
+#   ]))]
+# list of namedtuples (https://docs.python.org/3/library/collections.html#collections.namedtuple)
+# contains a CellBlock (structure containing "type" and "data" fields) for each gmsh physical group.
+# Here two different cellblocks have the same "type" because there are two "line" physical groups (see below)
+# "data" field contains the number (tag or label) of the nodes that constitute the element
 
-# mesh.cell_data_dict: {'vertex': {'gmsh:physical': array([2, 4, 5, 3])}, 'triangle': {'gmsh:physical': array([1, 1])}}
+print("mesh.point_data:\n", mesh.point_data)
+# empty for this .geo file
+# OUTPUT
+# mesh.point_data:
+#  {}
 
-# mesh.field_data:  {'bottom left corner': array([2, 0]), 'top left corner': array([3, 0]), 'bottom right corner': array([4, 0]), 'top right corner': array([5, 0]), 'cheese': array([1, 2])}
+print("mesh.cell_data:\n", mesh.cell_data)
+# OUTPUT
+# mesh.cell_data:
+#  {'gmsh:physical': [array([3]), array([4]), array([2]), array([1, 1, 1, 1])]}
+# dictionary of lists: in this case the only key is "gmsh:physical" because the only 
+# additional data gmsh provides regarding cells (elements) is which physical group they
+# belong to. 
+# In this case meshio is telling us that the only element inside the first CellBlock (vertex)
+# belongs to physical group with tag = 3 ("bottom left corner"), also the four triangular elements inside the last
+# CellBlock are all related to physical group with tag = 1 ("cheese")
+
+print("mesh.field_data:\n", mesh.field_data)
+# OUTPUT
+# mesh.field_data:
+#  {'bottom left corner': array([3, 0]), 'left side': array([2, 1]), 'right side': array([4, 1]), 'cheese': array([1, 2])}
+# Dictionary containing detail regarding physical groups.
+# Each key correspond to the physical group name we gave in the .geo file
+# Each value is an array composed in this way: [<physical_tag>, <dimension>] in which <dimension> is 1, 2 or 3
+# depending on whether the physical group is one-dimensional, two-dimensional or three-dimensional
+# in this example "bottom left corner" has tag = 3 and dimension is zero 'cause it represents a single point
+# "cheese" has tag = 1 and dimension = 2 because it includes the whole square surface.
+
+
+# DEPRECATED attributes, see https://github.com/nschloe/meshio/blob/master/CHANGELOG.md
+# mesh.cells_dict
+# mesh.cell_data_dict
+
+# ADDITIONAL METHODS (see https://github.com/nschloe/meshio/blob/master/meshio/_mesh.py#L123)
+# mesh.get_cells_type("triangle")
+# mesh.get_cell_data()

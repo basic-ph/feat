@@ -16,12 +16,11 @@ from feat import boundary as bc
 fem_log = logging.getLogger("fem")
 
 
-def base_analysis(mesh_path, element_type):
+def base_analysis(mesh, element_type):
     # MESH
-    mesh = meshio.read(mesh_path)
+    # mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
-    fem_log.info("MESH FILE: %s", mesh_path)
     fem_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
     # DATA
     integration_points = 1  # hard-coded but could be removed
@@ -59,12 +58,11 @@ def base_analysis(mesh_path, element_type):
     return modulus
 
 
-def vector_analysis(mesh_path, element_type):
+def vector_analysis(mesh, element_type):
     # MESH
-    mesh = meshio.read(mesh_path)
+    # mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
-    fem_log.info("MESH FILE: %s", mesh_path)
     fem_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
     # DATA
     load_condition = "plane strain"  # "plane stress" or "plane strain"
@@ -125,6 +123,8 @@ if __name__ == "__main__":
     np.set_printoptions(linewidth=200)
     
     start_time = time.time()
-    # base_analysis("./data/msh/rve_1.msh", "triangle")
-    vector_analysis("./data/msh/rve_1.msh", "triangle")
+    mesh = meshio.read("./data/msh/rve_1.msh")
+    # base_analysis(mesh, "triangle")
+    vector_analysis(mesh, "triangle")
+    # vector_analysis("./data/msh/rve_1.msh", "triangle")
     print(f"--- {time.time() - start_time} seconds ---")
