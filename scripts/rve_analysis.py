@@ -93,7 +93,7 @@ def main():
 
     while i < max_i:
         rve_log.info("----------------------------------------------------------------")
-        rve_log.info("Analysis of RVE #%s of size %s containing %s fibers", i, side, number)
+        rve_log.info("Analysis of RVE #%s of size %s containing %s fibers", i+1, side, number)
         refined_moduli = []
         for r in range(realizations):  # loop over different realizations
             rve_log.info("Analysis of realization #%s", r+1)
@@ -144,11 +144,11 @@ def main():
         min_E2 = min(refined_moduli)
 
         if (min_E2 > lower_lim) and (max_E2 < upper_lim):
-            rve_log.info("RVE #%s of size %s containing %s fibers has been validated!", i, side, number)
+            rve_log.info("RVE #%s of size %s containing %s fibers has been validated!", i+1, side, number)
             rve_log.info("Mean transverse modulus is E2 = %s", mean_E2)
             break
         else:
-            rve_log.info("RVE #%s of size %s is NOT representative!", i, side)
+            rve_log.info("RVE #%s of size %s is NOT representative!", i+1, side)
             i += 1
             number += 10
             side = math.sqrt(math.pi * radius**2 * number / Vf)  # ...causing the size of the RVE to increase
@@ -156,7 +156,7 @@ def main():
     rve_log.info("Stored data:\n%s", storage)
 
     # date = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-    data_file = f"./data/output/rve_b.csv"
+    data_file = f"./data/output/rve_d.csv"
     with open(data_file, 'w', newline='') as file:
         writer = csv.writer(file, quoting=csv.QUOTE_NONNUMERIC)
         writer.writerows(storage)
