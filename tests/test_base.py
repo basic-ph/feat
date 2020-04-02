@@ -120,7 +120,7 @@ def test_sparse_fem():
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
     
-    E_material = base.compute_E_array(mesh, element_type, steel)
+    E_material = base.compute_E_material(mesh, element_type, steel)
     K = sparse.csc_matrix((2 * nodes, 2 * nodes))
     R = np.zeros(nodes * 2)
     # for e in range(elements_num):
