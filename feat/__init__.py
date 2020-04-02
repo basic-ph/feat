@@ -1,3 +1,3 @@
 import logging
 
-logger = logging.getLogger("feat")
+logger = logging.getLogger(__name__)

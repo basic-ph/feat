@@ -7,32 +7,34 @@ import numpy as np
 from matplotlib.ticker import MaxNLocator
 
 
-def main(data_path):
+def main():
     parser = argparse.ArgumentParser(
         prog="python post.py",
     )
     parser.add_argument(
+        "data_path",
+        help="path to the data file used to create plots"
+    )
+    parser.add_argument(
         "-g",
-        "-group",
+        "--group",
         help="group up all graphs in the same figure",
-        dest="combine",
+        dest="group",
         action="store_true",
     )
     args = parser.parse_args()
 
     storage = []
-    with open(data_path, 'r', newline='') as file:
+    with open(args.data_path, 'r', newline='') as file:
         reader = csv.reader(file, quoting=csv.QUOTE_NONNUMERIC)
         for row in reader:
             storage.append(row)
 
     realizations = 10  # number of realizations to compare
     i_max = int(storage[-1][0]+1)  # rve size number of the last data row
-    print(i_max)
-    if args.combine:
+    if args.group:
         rows = math.ceil(i_max / 2)  # 2 is the num of columns wanted
         fig, axs = plt.subplots(rows, 2, constrained_layout=True)  # figure and axes for validation of each RVE
-        print(axs)
     x = np.linspace(0, 11, 12)
     mean_E2_data = []
 
@@ -49,7 +51,7 @@ def main(data_path):
         mean_E2 = data[6]
         mean_E2_data.append(mean_E2)
         
-        if args.combine:
+        if args.group:
             ax = axs.ravel()[i]
         else:
             fig, ax = plt.subplots(constrained_layout=True)
@@ -78,11 +80,9 @@ def main(data_path):
     ax2.set_title(f'RVE #{i+1} Convergence Analisys')
     ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
 
-    # fig.set_size_inches(7.5,8.0)
-    # plt.subplots_adjust(hspace=0.5, wspace=0.5)
-    # plt.tight_layout()
     plt.show()
 
 
 if __name__ == "__main__":
-    main("./data/output/rve_c.csv")
+    # main("./data/output/rve_d.csv")
+    main()

@@ -13,7 +13,7 @@ class Material():
         self.name = name
         self.young = young_modulus
         self.poisson = poisson_ratio
-        logger.info("Material %s loaded: E = %s, nu = %s", self.name, self.young, self.poisson)
+        logger.debug("Material %s loaded: E = %s, nu = %s", self.name, self.young, self.poisson)
 
         if load_condition == "plane strain":
             # E_full: constitutive matrix for base implementation (3x3 2D array)

@@ -5,6 +5,7 @@ import math
 from datetime import datetime
 from pathlib import Path
 from statistics import mean, stdev
+import time
 
 import matplotlib.pyplot as plt
 
@@ -14,33 +15,14 @@ import mesh
 
 def main():
     # LOGGING (you can skip this)
-    rve_log_lvl = logging.INFO
-    fem_log_lvl = logging.INFO
-    feat_log_lvl = logging.DEBUG
-
-    rve_log = logging.getLogger("rve")
-    rve_log.setLevel(rve_log_lvl)
+    log_lvl = logging.INFO
+    logger = logging.getLogger("feat")
+    logger.setLevel(log_lvl)
     handler = logging.StreamHandler()
-    handler.setLevel(rve_log_lvl)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')  # main_log formatter
+    handler.setLevel(log_lvl)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
-    rve_log.addHandler(handler)
-
-    fem_log = logging.getLogger("fem")
-    fem_log.setLevel(fem_log_lvl)
-    fem_handler = logging.StreamHandler()
-    fem_handler.setLevel(fem_log_lvl)
-    fem_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')  # fem_log formatter
-    fem_handler.setFormatter(fem_formatter)
-    fem_log.addHandler(fem_handler)
-
-    feat_log = logging.getLogger("feat")
-    feat_log.setLevel(feat_log_lvl)
-    feat_handler = logging.StreamHandler()
-    feat_handler.setLevel(feat_log_lvl)
-    feat_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    feat_handler.setFormatter(feat_formatter)
-    feat_log.addHandler(feat_handler)
+    logger.addHandler(handler)
 
     # argument parser creation and setup
     desc = (
@@ -81,22 +63,17 @@ def main():
     fine_cls = [cl / 2 for cl in coarse_cls]  # fine element dimension (matrix-fiber boundary)
     # fem data
     element_type = "triangle"
-
-    # -------------- FROM MESH.PY --------------------
-    # geo_path = "data/geo/rve_1.geo"  # TODO particular name for each realiz and mesh
-    # msh_path = "data/msh/rve_1.msh"
-
     
     i = 0
     max_i = 10
     storage = []
 
     while i < max_i:
-        rve_log.info("----------------------------------------------------------------")
-        rve_log.info("Analysis of RVE #%s of size %s containing %s fibers", i+1, side, number)
+        logger.info("------------------------------------------------------------")
+        logger.info("Analysis of RVE #%s of size %s containing %s fibers", i+1, side, number)
         refined_moduli = []
         for r in range(realizations):  # loop over different realizations
-            rve_log.info("Analysis of realization #%s", r+1)
+            logger.debug("Analysis of realization #%s", r+1)
             # obtaining centers coordinates using RSA algorithm
             x_array, y_array = mesh.get_fiber_centers(radius, number, side, min_distance, offset, max_iter)
             moduli = []
@@ -119,7 +96,7 @@ def main():
                     fine_cl
                 )
                 nodes = mesh_obj.points.shape[0]
-                rve_log.info("Created mesh details: coarse cl: %s | fine cl: %s | nodes: %s", coarse_cl, fine_cl, nodes)            
+                logger.debug("Created mesh details: coarse cl: %s | fine cl: %s | nodes: %s", coarse_cl, fine_cl, nodes)            
                 # run FEM simulation on the current realization and mesh                
                 E2 = analysis(mesh_obj, element_type)
                 storage.append([i, r, s, side, nodes, E2])
@@ -128,9 +105,10 @@ def main():
                 else:
                     moduli.append(E2)
                     prev_E2 = moduli[s-1] 
-                    rel_diff = abs(E2 - prev_E2) / prev_E2  # FIXME difference relative to precedent obtained estimate
+                    rel_diff = abs(E2 - prev_E2) / prev_E2  # difference relative to precedent obtained estimate
                     if rel_diff < 0.01:
-                        rve_log.info("Mesh convergence obtained for simulation #%s for realization #%s", s+1, r+1)
+                        logger.debug("Mesh convergence obtained for simulation #%s for realization #%s", s+1, r+1)
+                        logger.debug("------------------------------")
                         refined_moduli.append(E2)  # saving the last values as the valid one
                         break  # mesh convergence obtained, continue with the next random realization
 
@@ -144,16 +122,16 @@ def main():
         min_E2 = min(refined_moduli)
 
         if (min_E2 > lower_lim) and (max_E2 < upper_lim):
-            rve_log.info("RVE #%s of size %s containing %s fibers has been validated!", i+1, side, number)
-            rve_log.info("Mean transverse modulus is E2 = %s", mean_E2)
+            logger.info("RVE #%s of size %s containing %s fibers has been validated!", i+1, side, number)
+            logger.info("Mean transverse modulus is E2 = %s", mean_E2)
             break
         else:
-            rve_log.info("RVE #%s of size %s is NOT representative!", i+1, side)
+            logger.info("RVE #%s of size %s is NOT representative!", i+1, side)
             i += 1
             number += 10
             side = math.sqrt(math.pi * radius**2 * number / Vf)  # ...causing the size of the RVE to increase
     
-    rve_log.info("Stored data:\n%s", storage)
+    logger.debug("Stored data:\n%s", storage)
 
     # date = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
     data_file = f"./data/output/rve_d.csv"
@@ -162,4 +140,6 @@ def main():
         writer.writerows(storage)
 
 if __name__ == "__main__":
+    start_time = time.time()
     main()
+    print(f"--- {time.time() - start_time} seconds ---")

@@ -13,7 +13,7 @@ from feat import boundary as bc
 
 
 # LOGGING
-fem_log = logging.getLogger("fem")
+logger = logging.getLogger(f"feat.{__name__}")
 
 
 def base_analysis(mesh, element_type):
@@ -21,13 +21,11 @@ def base_analysis(mesh, element_type):
     # mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
-    fem_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
+    logger.debug("mesh info: %d elements, %d nodes", elements_num, nodes)
     # DATA
     integration_points = 1  # hard-coded but could be removed
     load_condition = "plane strain"  # TODO also this could be removed 'cause we need only plane strain case
     thickness = 1  # TODO make this a passed argument?
-    fem_log.info("LOAD CONDITION: %s", load_condition)
-    fem_log.info("THICKNESS: %s", thickness)
     # MATERIAL
     matrix = base.Material("matrix", 100, 0.3, load_condition)
     fiber = base.Material("fiber", 700, 0.25, load_condition)
@@ -53,7 +51,7 @@ def base_analysis(mesh, element_type):
     D = np.linalg.solve(K, R)
     reactions = np.dot(K_rows, D)
     modulus = base.compute_modulus(mesh, right_side, reactions, thickness)
-    fem_log.info("RESULTING ELASTIC MODULUS (E2): %f", modulus)
+    logger.debug("E2 = %f", modulus)
 
     return modulus
 
@@ -63,12 +61,10 @@ def vector_analysis(mesh, element_type):
     # mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
-    fem_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
+    logger.debug("mesh info: %d elements, %d nodes", elements_num, nodes)
     # DATA
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
-    fem_log.info("LOAD CONDITION: %s", load_condition)
-    fem_log.info("THICKNESS: %s", thickness)
     # MATERIAL
     matrix = base.Material("matrix", 100, 0.3, load_condition)
     fiber = base.Material("fiber", 700, 0.25, load_condition)
@@ -96,21 +92,13 @@ def vector_analysis(mesh, element_type):
     D = linalg.spsolve(K, R)
     reactions = K_rows.dot(D)
     modulus = base.compute_modulus(mesh, right_side, reactions, thickness)
-    fem_log.info("RESULTING ELASTIC MODULUS (E2): %f", modulus)
+    logger.debug("E2 = %f", modulus)
 
     return modulus
 
 
 if __name__ == "__main__":
     # logger
-    fem_log = logging.getLogger("fem")
-    fem_log.setLevel(logging.INFO)
-    fem_handler = logging.StreamHandler()  # fem_log handler
-    fem_handler.setLevel(logging.INFO)
-    fem_formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')  # fem_log formatter
-    fem_handler.setFormatter(fem_formatter)
-    fem_log.addHandler(fem_handler)
-
     feat_log_lvl = logging.DEBUG
     feat_log = logging.getLogger("feat")
     feat_log.setLevel(feat_log_lvl)
