@@ -55,10 +55,9 @@ class Material():
             ])
 
 
-def compute_E_array(mesh, element_type, *materials):
+def compute_E_material(mesh, element_type, *materials):
     elements_num = mesh.cells_dict[element_type].shape[0]
     materials_num = len(materials)
-    E_array = np.zeros((elements_num,3,3))  # 3D array composed by E matrix for each element
     E_material = np.zeros((materials_num,3,3)) # 3D array composed by E matrix for each material
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
 
@@ -67,8 +66,7 @@ def compute_E_array(mesh, element_type, *materials):
         # array containing constitutive matrices for each material in mesh
         E_material[tag,:,:] = m.E_full
 
-    E_array = E_material[material_map]
-    return E_array
+    return E_material
 
 
 def gauss_quadrature(element_type, integration_points):
@@ -108,7 +106,7 @@ x = lambda a, i, j: a[i][0] - a[j][0]
 y = lambda b, i, j: b[i][1] - b[j][1]
 
 
-def stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_points):
+def stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points):
 
     t = thickness
     element = mesh.cells_dict[element_type][e]
@@ -116,8 +114,8 @@ def stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_poin
     c = mesh.points[:,:2][element]
     # print("coord:\n", c)
  
-    E = E_array[e]
-    # print("E:\n", E)
+    e_tag = mesh.cell_data_dict["gmsh:physical"][element_type][e] - 1  # physical tag relative to element e (identify material)
+    E = E_material[e_tag]
 
     # element/local stiffness matrix
     k = np.zeros((2*element.shape[0], 2*element.shape[0]))  # for T6 --> 12 by 12
@@ -188,10 +186,10 @@ def compute_global_dof(e, mesh, element_type):
     return element_dof
 
 
-def assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points):
+def assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points):
 
     for e in range(elements_num):
-        k = stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_points)
+        k = stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points)
         element_dof = compute_global_dof(e, mesh, element_type)
         for i in range(6):  # becomes 12 for T6
             I = element_dof[i]
@@ -201,10 +199,10 @@ def assembly(K, elements_num, mesh, E_array, thickness, element_type, integratio
     return K
 
 
-def sparse_assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points):
+def sparse_assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points):
     nodes = mesh.points.shape[0]
     for e in range(elements_num):
-        k = stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_points)
+        k = stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points)
         k_data = np.ravel(k)  # flattened 6x6 local matrix
         element_dof = compute_global_dof(e, mesh, element_type)
 

@@ -16,7 +16,7 @@ def test_compute_E_array():
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)    
-    E_array = base.compute_E_array(mesh, element_type, steel)
+    E_material = base.compute_E_material(mesh, element_type, steel)
 
     E_steel = np.array([
         (3.2e7, 8e6, 0.0),
@@ -24,7 +24,7 @@ def test_compute_E_array():
         (0.0, 0.0, 1.2e7),
     ])
     # TODO add aluminum matrix testing
-    np.testing.assert_allclose(E_steel, E_array[0])
+    np.testing.assert_allclose(E_steel, E_material[0])
 
 
 def test_stiffness_matrix():
@@ -39,10 +39,10 @@ def test_stiffness_matrix():
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
-    E_array = base.compute_E_array(mesh, element_type, steel)
+    E_material = base.compute_E_material(mesh, element_type, steel)
 
-    k_0 = base.stiffness_matrix(0, mesh, E_array, thickness, element_type, integration_points)
-    k_1 = base.stiffness_matrix(1, mesh, E_array, thickness, element_type, integration_points)
+    k_0 = base.stiffness_matrix(0, mesh, E_material, thickness, element_type, integration_points)
+    k_1 = base.stiffness_matrix(1, mesh, E_material, thickness, element_type, integration_points)
 
     k_0_true = np.array([
         (5333333.33333333, 0.0, -5333333.33333333, 2000000., 0., -2000000.),
@@ -82,12 +82,12 @@ def test_fem():
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
     
-    E_array = base.compute_E_array(mesh, element_type, steel)
+    E_material = base.compute_E_material(mesh, element_type, steel)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
     # for e in range(elements_num):
-    #     K = base.assembly(K, e, mesh, E_array, thickness, element_type, integration_points)
-    K = base.assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points)
+    #     K = base.assembly(K, e, mesh, E_material, thickness, element_type, integration_points)
+    K = base.assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
 
     K, R = bc.apply_dirichlet(K, R, left_side, br_corner)
     R = bc.apply_neumann(R, tr_corner)
@@ -120,12 +120,12 @@ def test_sparse_fem():
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
     
-    E_array = base.compute_E_array(mesh, element_type, steel)
+    E_material = base.compute_E_array(mesh, element_type, steel)
     K = sparse.csc_matrix((2 * nodes, 2 * nodes))
     R = np.zeros(nodes * 2)
     # for e in range(elements_num):
-    #     K = base.sparse_assembly(K, e, mesh, E_array, thickness, element_type, integration_points)
-    K = base.sparse_assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points)
+    #     K = base.sparse_assembly(K, e, mesh, E_material, thickness, element_type, integration_points)
+    K = base.sparse_assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
 
     print(K)
     K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, br_corner)

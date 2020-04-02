@@ -65,10 +65,10 @@ def test_feap_1():
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_array = base.compute_E_array(mesh, element_type, cheese)
+    E_material = base.compute_E_material(mesh, element_type, cheese)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
-    K = base.assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points)
+    K = base.assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K)
 
     # contrained dof rows of K are saved now
@@ -165,11 +165,11 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_array = base.compute_E_array(mesh, element_type, rubber)
-    main_log.debug("E array:\n %s\n", E_array)
+    E_material = base.compute_E_material(mesh, element_type, rubber)
+    main_log.debug("E array:\n %s\n", E_material)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
-    K = base.assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points)
+    K = base.assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K)
 
     # contrained dof rows of K are saved now

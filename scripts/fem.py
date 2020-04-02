@@ -36,10 +36,10 @@ def base_analysis(mesh, element_type):
     right_side = bc.DirichletBC("right side", mesh, [0], 1.0)
 
     # ASSEMBLY
-    E_array = base.compute_E_array(mesh, element_type, matrix, fiber)
+    E_material = base.compute_E_material(mesh, element_type, matrix, fiber)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
-    K = base.assembly(K, elements_num, mesh, E_array, thickness, element_type, integration_points)
+    K = base.assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
     
     # contrained dof rows of K are saved now
     reaction_dof = bc.dirichlet_dof(left_side, bl_corner)

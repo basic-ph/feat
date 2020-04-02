@@ -5,7 +5,7 @@ x = lambda a, i, j: a[i][0] - a[j][0]
 y = lambda b, i, j: b[i][1] - b[j][1]
 
 
-def stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_points):
+def stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points):
 
     t = thickness
     element = mesh.cells_dict[element_type][e]
@@ -13,7 +13,8 @@ def stiffness_matrix(e, mesh, E_array, thickness, element_type, integration_poin
     c = mesh.points[:,:2][element]
     print("coord:\n", c)
  
-    E = E_array[e]
+    e_tag = mesh.cell_data_dict["gmsh:physical"][element_type][e] - 1  # physical tag relative to element e (identify material)
+    E = E_material[e_tag]
     print("E:\n", E)
 
     # element/local stiffness matrix

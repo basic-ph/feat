@@ -23,10 +23,10 @@ def test_stiffness_matrix():
     elements_num = mesh.cells_dict[element_type].shape[0]
     print("el num", elements_num)
     nodes = mesh.points.shape[0]
-    E_array = base.compute_E_array(mesh, element_type, berillium)
+    E_material = base.compute_E_array(mesh, element_type, berillium)
 
-    # k_0 = T6.stiffness_matrix(0, mesh, E_array, thickness, element_type, integration_points)
-    k_0 = base.stiffness_matrix(0, mesh, E_array, thickness, element_type, integration_points)
+    # k_0 = T6.stiffness_matrix(0, mesh, E_material, thickness, element_type, integration_points)
+    k_0 = base.stiffness_matrix(0, mesh, E_material, thickness, element_type, integration_points)
 
     k_0_true = np.array([
         (5333333.33333333, 0.0, -5333333.33333333, 2000000., 0., -2000000.),
