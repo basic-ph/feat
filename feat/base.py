@@ -56,6 +56,23 @@ class Material():
 
 
 def compute_E_material(mesh, element_type, *materials):
+    """
+    Compute the array "E_array" containing the constitutive matrices (3x3) of each 
+    element in the mesh.
+    
+    Parameters
+    ----------
+    mesh : meshio.Mesh
+        Mesh object with physical groups indicating materials
+    element_type : str
+        indentify the type of elements that compose the mesh
+        it can be "triangle" or (not supported yet) "triangle6"
+    
+    Returns
+    -------
+    E_array : (elements_num, 3, 3) numpy.ndarray
+        three-dimensional array with as many "pages" as elements in the mesh
+    """
     elements_num = mesh.cells_dict[element_type].shape[0]
     materials_num = len(materials)
     E_material = np.zeros((materials_num,3,3)) # 3D array composed by E matrix for each material
