@@ -114,14 +114,14 @@ def create_mesh(geo_path, msh_path, radius, number, side, x_array, y_array, coar
 
 if __name__ == "__main__":
 
-    geo_path = "data/geo/rve_1.geo"
-    msh_path = "data/msh/rve_1.msh"
+    geo_path = "data/geo/rve_bench.geo"
+    msh_path = "data/msh/rve_bench.msh"
     max_iter = 100000
 
     # RVE logic
     Vf = 0.30  # fiber volume fraction
     radius = 1.0
-    number = 10
+    number = 50
     side = math.sqrt(math.pi * radius**2 * number / Vf)
     print("rve side = ", side)
     min_distance = 2.1 * radius

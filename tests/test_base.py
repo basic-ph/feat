@@ -125,7 +125,7 @@ def test_sparse_fem():
     R = np.zeros(nodes * 2)
     # for e in range(elements_num):
     #     K = base.sparse_assembly(K, e, mesh, E_material, thickness, element_type, integration_points)
-    K = base.sparse_assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
+    K = base.sp_assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
 
     print(K)
     K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, br_corner)

@@ -77,7 +77,7 @@ def main():
     ax2.plot(i_data, mean_E2_data, "o-g")
     ax2.set_xlabel("RVE id")
     ax2.set_ylabel(r"$\overline{E2} \quad[unit]$")
-    ax2.set_title(f'RVE #{i+1} Convergence Analisys')
+    ax2.set_title(f'RVE #{i+1} Convergence Analysis')
     ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
 
     plt.show()

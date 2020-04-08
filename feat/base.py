@@ -216,7 +216,7 @@ def assembly(K, elements_num, mesh, E_material, thickness, element_type, integra
     return K
 
 
-def sparse_assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points):
+def sp_assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points):
     nodes = mesh.points.shape[0]
     for e in range(elements_num):
         k = stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points)
