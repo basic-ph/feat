@@ -1,15 +1,18 @@
 import sys
 import math
 from pathlib import Path
+import logging
 
 import meshio
 import numpy as np
 import pygmsh
 
 
-def get_fiber_centers(radius, number, side, min_distance, offset, max_iter):
+logger = logging.getLogger(f"feat.{__name__}")
+
+
+def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_iter):
    
-    rg = np.random.default_rng()  # random generator, accept seed as arg (reproducibility)
     get_dist = lambda x_0, y_0, x_1, y_1: np.sqrt((x_0 - x_1)**2 + (y_0 - y_1)**2)
 
     x_array = np.zeros(number)  # array with x coordinate of centers
@@ -20,8 +23,8 @@ def get_fiber_centers(radius, number, side, min_distance, offset, max_iter):
     while k < max_iter:
         k += 1
         valid = True
-        x = offset + (side - 2*offset)* rg.random()
-        y = offset + (side - 2*offset)* rg.random()
+        x = offset + (side - 2*offset)* rand_gen.random()
+        y = offset + (side - 2*offset)* rand_gen.random()
 
         for j in range(i):
             distance = get_dist(x, y, x_array[j], y_array[j])
@@ -40,6 +43,7 @@ def get_fiber_centers(radius, number, side, min_distance, offset, max_iter):
             break
 
     if i < (number -1):
+        logger.warning("Fiber centers not found!!! exit...")
         sys.exit()
 
     return x_array, y_array
@@ -114,8 +118,8 @@ def create_mesh(geo_path, msh_path, radius, number, side, x_array, y_array, coar
 
 if __name__ == "__main__":
 
-    geo_path = "data/geo/rve_bench.geo"
-    msh_path = "data/msh/rve_bench.msh"
+    geo_path = "data/geo/rve_seed.geo"
+    msh_path = "data/msh/rve_seed.msh"
     max_iter = 100000
 
     # RVE logic
@@ -129,7 +133,9 @@ if __name__ == "__main__":
     coarse_cl = 0.5
     fine_cl = coarse_cl / 5
 
-    x_array, y_array = get_fiber_centers(radius, number, side, min_distance, offset, max_iter)
+    rg = np.random.default_rng(19)  # random generator, accept seed as arg (reproducibility)
+
+    x_array, y_array = get_fiber_centers(rg, radius, number, side, min_distance, offset, max_iter)
 
     mesh = create_mesh(
         geo_path,

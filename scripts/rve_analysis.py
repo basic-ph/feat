@@ -8,6 +8,7 @@ from statistics import mean, stdev
 import time
 
 import matplotlib.pyplot as plt
+import numpy as np
 
 import fem
 import mesh
@@ -50,7 +51,7 @@ def main():
 
     # DATA
     # rve data
-    realizations = 10  # number of realizations to compare
+    realizations = 20  # number of realizations to compare
     Vf = 0.30  # fiber volume fraction
     radius = 1.0  # fiber radius
     number = 10  # number of fibers
@@ -63,6 +64,8 @@ def main():
     fine_cls = [cl / 2 for cl in coarse_cls]  # fine element dimension (matrix-fiber boundary)
     # fem data
     element_type = "triangle"
+
+    rand_gen = np.random.default_rng(19)  # random generator, accept seed as arg (reproducibility)
     
     i = 0
     max_i = 10
@@ -75,7 +78,8 @@ def main():
         for r in range(realizations):  # loop over different realizations
             logger.debug("Analysis of realization #%s", r+1)
             # obtaining centers coordinates using RSA algorithm
-            x_array, y_array = mesh.get_fiber_centers(radius, number, side, min_distance, offset, max_iter)
+            x_array, y_array = mesh.get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_iter)
+            logger.debug("First fiber center obtained is: (%s, %s)", x_array[0], y_array[0])
             moduli = []
 
             for s in range(len(coarse_cls)):
@@ -122,10 +126,14 @@ def main():
         min_E2 = min(refined_moduli)
 
         if (min_E2 > lower_lim) and (max_E2 < upper_lim):
-            logger.info("RVE #%s of size %s containing %s fibers has been validated!", i+1, side, number)
             logger.info("Mean transverse modulus is E2 = %s", mean_E2)
+            logger.info("RVE #%s of size %s containing %s fibers has been validated!", i+1, side, number)
             break
+            # i += 1
+            # number += 10
+            # side = math.sqrt(math.pi * radius**2 * number / Vf)  # ...causing the size of the RVE to increase
         else:
+            logger.info("Mean transverse modulus is E2 = %s", mean_E2)
             logger.info("RVE #%s of size %s is NOT representative!", i+1, side)
             i += 1
             number += 10
@@ -134,7 +142,7 @@ def main():
     logger.debug("Stored data:\n%s", storage)
 
     # date = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-    data_file = f"./data/output/rve_e.csv"
+    data_file = f"./data/output/a01.csv"
     with open(data_file, 'w', newline='') as file:
         writer = csv.writer(file, quoting=csv.QUOTE_NONNUMERIC)
         writer.writerows(storage)

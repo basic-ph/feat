@@ -30,7 +30,7 @@ def main():
         for row in reader:
             storage.append(row)
 
-    realizations = 10  # number of realizations to compare
+    realizations = 20  # number of realizations to compare
     i_max = int(storage[-1][0]+1)  # rve size number of the last data row
     if args.group:
         rows = math.ceil(i_max / 2)  # 2 is the num of columns wanted
