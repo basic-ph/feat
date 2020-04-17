@@ -117,9 +117,18 @@ def create_mesh(geo_path, msh_path, radius, number, side, x_array, y_array, coar
 
 
 if __name__ == "__main__":
+    # logger
+    log_lvl = logging.DEBUG
+    logger = logging.getLogger("feat")
+    logger.setLevel(log_lvl)
+    handler = logging.StreamHandler()
+    handler.setLevel(log_lvl)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
 
-    geo_path = "data/geo/rve_seed.geo"
-    msh_path = "data/msh/rve_seed.msh"
+    geo_path = "data/geo/refined_2.geo"
+    msh_path = "data/msh/refined_2.msh"
     max_iter = 100000
 
     # RVE logic
@@ -131,7 +140,7 @@ if __name__ == "__main__":
     min_distance = 2.1 * radius
     offset = 1.1 * radius
     coarse_cl = 0.5
-    fine_cl = coarse_cl / 5
+    fine_cl = coarse_cl / 2
 
     rg = np.random.default_rng(19)  # random generator, accept seed as arg (reproducibility)
 

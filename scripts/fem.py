@@ -27,8 +27,8 @@ def base_analysis(mesh, element_type):
     load_condition = "plane strain"  # TODO also this could be removed 'cause we need only plane strain case
     thickness = 1  # TODO make this a passed argument?
     # MATERIAL
-    matrix = base.Material("matrix", 100, 0.3, load_condition)
-    fiber = base.Material("fiber", 700, 0.25, load_condition)
+    matrix = base.Material("matrix", 3.2, 0.35, load_condition)
+    fiber = base.Material("fiber", 20, 0.20, load_condition)
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
@@ -67,8 +67,8 @@ def sp_base_analysis(mesh, element_type):
     load_condition = "plane strain"  # TODO also this could be removed 'cause we need only plane strain case
     thickness = 1  # TODO make this a passed argument?
     # MATERIAL
-    matrix = base.Material("matrix", 100, 0.3, load_condition)
-    fiber = base.Material("fiber", 700, 0.25, load_condition)
+    matrix = base.Material("matrix", 3.2, 0.35, load_condition)
+    fiber = base.Material("fiber", 20, 0.20, load_condition)
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
@@ -109,8 +109,8 @@ def vector_analysis(mesh, element_type):
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
     # MATERIAL
-    matrix = base.Material("matrix", 100, 0.3, load_condition)
-    fiber = base.Material("fiber", 700, 0.25, load_condition)
+    matrix = base.Material("matrix", 3.2, 0.35, load_condition)
+    fiber = base.Material("fiber", 20, 0.20, load_condition)
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     np.set_printoptions(linewidth=200)
     
     start_time = time.time()
-    mesh = meshio.read("./data/msh/rve_bench.msh")
+    mesh = meshio.read("./data/msh/refined_2.msh")
     # E = base_analysis(mesh, "triangle")
     # E = sp_base_analysis(mesh, "triangle")
     E = vector_analysis(mesh, "triangle")

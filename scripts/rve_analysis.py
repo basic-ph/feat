@@ -51,7 +51,7 @@ def main():
 
     # DATA
     # rve data
-    realizations = 20  # number of realizations to compare
+    realizations = 30  # number of realizations to compare
     Vf = 0.30  # fiber volume fraction
     radius = 1.0  # fiber radius
     number = 10  # number of fibers
@@ -142,7 +142,7 @@ def main():
     logger.debug("Stored data:\n%s", storage)
 
     # date = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-    data_file = f"./data/output/a01.csv"
+    data_file = f"./data/output/e02.csv"
     with open(data_file, 'w', newline='') as file:
         writer = csv.writer(file, quoting=csv.QUOTE_NONNUMERIC)
         writer.writerows(storage)
