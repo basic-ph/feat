@@ -15,8 +15,10 @@ def test_compute_E_array():
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
-    mesh = meshio.read(mesh_path)    
-    E_material = base.compute_E_material(mesh, element_type, steel)
+    mesh = meshio.read(mesh_path)
+    elements_num = mesh.cells_dict[element_type].shape[0]
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
+    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, steel)
 
     E_steel = np.array([
         (3.2e7, 8e6, 0.0),
@@ -39,7 +41,8 @@ def test_stiffness_matrix():
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
-    E_material = base.compute_E_material(mesh, element_type, steel)
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
+    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, steel)
 
     k_0 = base.stiffness_matrix(0, mesh, E_material, thickness, element_type, integration_points)
     k_1 = base.stiffness_matrix(1, mesh, E_material, thickness, element_type, integration_points)
@@ -77,12 +80,13 @@ def test_fem():
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
     
-    E_material = base.compute_E_material(mesh, element_type, steel)
+    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, steel)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
     # for e in range(elements_num):
@@ -115,12 +119,13 @@ def test_sparse_fem():
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
     
-    E_material = base.compute_E_material(mesh, element_type, steel)
+    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, steel)
     K = sparse.csc_matrix((2 * nodes, 2 * nodes))
     R = np.zeros(nodes * 2)
     # for e in range(elements_num):

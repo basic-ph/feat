@@ -56,6 +56,7 @@ def test_feap_1():
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     main_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
 
     # BOUNDARY CONDITIONS INSTANCES
@@ -65,7 +66,7 @@ def test_feap_1():
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_material = base.compute_E_material(mesh, element_type, cheese)
+    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, cheese)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
     K = base.assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
@@ -155,6 +156,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     main_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
 
     # BOUNDARY CONDITIONS INSTANCES
@@ -165,7 +167,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_material = base.compute_E_material(mesh, element_type, rubber)
+    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, rubber)
     main_log.debug("E array:\n %s\n", E_material)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)

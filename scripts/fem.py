@@ -21,6 +21,7 @@ def base_analysis(mesh, element_type):
     # mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     logger.debug("mesh info: %d elements, %d nodes", elements_num, nodes)
     # DATA
     integration_points = 1  # hard-coded but could be removed
@@ -36,7 +37,7 @@ def base_analysis(mesh, element_type):
     right_side = bc.DirichletBC("right side", mesh, [0], 1.0)
 
     # ASSEMBLY
-    E_material = base.compute_E_material(mesh, element_type, matrix, fiber)
+    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, matrix, fiber)
     K = np.zeros((nodes * 2, nodes * 2))
     R = np.zeros(nodes * 2)
     K = base.assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
@@ -61,6 +62,7 @@ def sp_base_analysis(mesh, element_type):
     # mesh = meshio.read(mesh_path)
     elements_num = mesh.cells_dict[element_type].shape[0]
     nodes = mesh.points.shape[0]
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     logger.debug("mesh info: %d elements, %d nodes", elements_num, nodes)
     # DATA
     integration_points = 1  # hard-coded but could be removed
@@ -76,7 +78,7 @@ def sp_base_analysis(mesh, element_type):
     right_side = bc.DirichletBC("right side", mesh, [0], 1.0)
 
     # ASSEMBLY
-    E_material = base.compute_E_material(mesh, element_type, matrix, fiber)
+    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, matrix, fiber)
     K = sparse.csc_matrix((2 * nodes, 2 * nodes))
     R = np.zeros(nodes * 2)
     K = base.sp_assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)

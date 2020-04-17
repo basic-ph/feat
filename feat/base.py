@@ -55,7 +55,7 @@ class Material():
             ])
 
 
-def compute_E_material(mesh, element_type, *materials):
+def compute_E_material(elements_num, material_map, field_data, *materials):
     """
     Compute the array "E_array" containing the constitutive matrices (3x3) of each 
     element in the mesh.
@@ -73,13 +73,11 @@ def compute_E_material(mesh, element_type, *materials):
     E_array : (elements_num, 3, 3) numpy.ndarray
         three-dimensional array with as many "pages" as elements in the mesh
     """
-    elements_num = mesh.cells_dict[element_type].shape[0]
     materials_num = len(materials)
     E_material = np.zeros((materials_num,3,3)) # 3D array composed by E matrix for each material
-    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
 
     for m in materials:
-        tag = mesh.field_data[m.name][0] - 1   # convert to zero offset from unit offset (gmsh)
+        tag = field_data[m.name][0] - 1   # convert to zero offset from unit offset (gmsh)
         # array containing constitutive matrices for each material in mesh
         E_material[tag,:,:] = m.E_full
 
@@ -123,10 +121,10 @@ x = lambda a, i, j: a[i][0] - a[j][0]
 y = lambda b, i, j: b[i][1] - b[j][1]
 
 
-def stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points):
+def stiffness_matrix(e, mesh, elements, E_material, thickness, element_type, integration_points):
 
     t = thickness
-    element = mesh.cells_dict[element_type][e]
+    element = elements[element_type][e]
     # print("nodes:\n", element.shape[0])
     c = mesh.points[:,:2][element]
     # print("coord:\n", c)
