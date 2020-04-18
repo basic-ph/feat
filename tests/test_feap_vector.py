@@ -53,9 +53,9 @@ def test_feap_1():
 
     # MESH
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
-    main_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
+    main_log.info("MESH INFO: %d elements, %d nodes", num_elements, num_nodes)
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
@@ -65,7 +65,7 @@ def test_feap_1():
 
     # ASSEMBLY
     E_array = vector.compute_E_array(mesh, element_type, cheese)
-    R = np.zeros(nodes * 2)
+    R = np.zeros(num_nodes * 2)
     K = vector.assembly(mesh, element_type, E_array, thickness)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K)
 
@@ -77,7 +77,7 @@ def test_feap_1():
     K = K.tocsc()
     
     # BOUNDARY CONDITIONS APPLICATION
-    K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, bl_corner, right_side)
+    K, R = bc.sp_apply_dirichlet(num_nodes, K, R, left_side, bl_corner, right_side)
     main_log.debug("STIFFNESS MATRIX (K) AFTER BC:\n %s\n", K)
     main_log.debug("LOAD VECTOR (R) BEFORE BC:\n %s\n", R)
 
@@ -150,9 +150,9 @@ def test_feap_2(poisson, D_true, reactions_true):
 
     # MESH
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
-    main_log.info("MESH INFO: %d elements, %d nodes", elements_num, nodes)
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
+    main_log.info("MESH INFO: %d elements, %d nodes", num_elements, num_nodes)
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
@@ -164,7 +164,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     # ASSEMBLY
     E_array = vector.compute_E_array(mesh, element_type, rubber)
     main_log.debug("E array:\n %s\n", E_array)
-    R = np.zeros(nodes * 2)
+    R = np.zeros(num_nodes * 2)
     K = vector.assembly(mesh, element_type, E_array, thickness)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K.todense())
 
@@ -176,7 +176,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     K = K.tocsc()
     
     # BOUNDARY CONDITIONS APPLICATION
-    K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, b_corner)
+    K, R = bc.sp_apply_dirichlet(num_nodes, K, R, left_side, b_corner)
     R = bc.apply_neumann(R, r_corner_x, r_corner_y)
     main_log.debug("STIFFNESS MATRIX (K) AFTER BC:\n %s\n", K.todense())
     main_log.debug("LOAD VECTOR (R) BEFORE BC:\n %s\n", R)

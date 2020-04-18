@@ -9,7 +9,6 @@ def stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_p
 
     t = thickness
     element = mesh.cells_dict[element_type][e]
-    print("nodes:\n", element.shape[0])
     c = mesh.points[:,:2][element]
     print("coord:\n", c)
  

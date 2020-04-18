@@ -99,11 +99,11 @@ def main():
                     coarse_cl,
                     fine_cl
                 )
-                nodes = mesh_obj.points.shape[0]
-                logger.debug("Created mesh details: coarse cl: %s | fine cl: %s | nodes: %s", coarse_cl, fine_cl, nodes)            
+                num_nodes = mesh_obj.points.shape[0]
+                logger.debug("Created mesh details: coarse cl: %s | fine cl: %s | nodes: %s", coarse_cl, fine_cl, num_nodes)            
                 # run FEM simulation on the current realization and mesh                
                 E2 = analysis(mesh_obj, element_type)
-                storage.append([i, r, s, side, nodes, E2])
+                storage.append([i, r, s, side, num_nodes, E2])
                 if s == 0:
                     moduli.append(E2) # store the value obtained for mesh convergence validation
                 else:

@@ -19,10 +19,10 @@ logger = logging.getLogger(f"feat.{__name__}")
 def base_analysis(mesh, element_type):
     # MESH
     # mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
-    logger.debug("mesh info: %d elements, %d nodes", elements_num, nodes)
+    logger.debug("mesh info: %d elements, %d nodes", num_elements, num_nodes)
     # DATA
     integration_points = 1  # hard-coded but could be removed
     load_condition = "plane strain"  # TODO also this could be removed 'cause we need only plane strain case
@@ -37,10 +37,10 @@ def base_analysis(mesh, element_type):
     right_side = bc.DirichletBC("right side", mesh, [0], 1.0)
 
     # ASSEMBLY
-    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, matrix, fiber)
-    K = np.zeros((nodes * 2, nodes * 2))
-    R = np.zeros(nodes * 2)
-    K = base.assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
+    E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, matrix, fiber)
+    K = np.zeros((num_nodes * 2, num_nodes * 2))
+    R = np.zeros(num_nodes * 2)
+    K = base.assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points)
     
     # contrained dof rows of K are saved now
     reaction_dof = bc.dirichlet_dof(left_side, bl_corner)
@@ -60,10 +60,10 @@ def base_analysis(mesh, element_type):
 def sp_base_analysis(mesh, element_type):
     # MESH
     # mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
-    logger.debug("mesh info: %d elements, %d nodes", elements_num, nodes)
+    logger.debug("mesh info: %d elements, %d nodes", num_elements, num_nodes)
     # DATA
     integration_points = 1  # hard-coded but could be removed
     load_condition = "plane strain"  # TODO also this could be removed 'cause we need only plane strain case
@@ -78,10 +78,10 @@ def sp_base_analysis(mesh, element_type):
     right_side = bc.DirichletBC("right side", mesh, [0], 1.0)
 
     # ASSEMBLY
-    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, matrix, fiber)
-    K = sparse.csc_matrix((2 * nodes, 2 * nodes))
-    R = np.zeros(nodes * 2)
-    K = base.sp_assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
+    E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, matrix, fiber)
+    K = sparse.csc_matrix((2 * num_nodes, 2 * num_nodes))
+    R = np.zeros(num_nodes * 2)
+    K = base.sp_assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points)
     
     # save constrained dof rows of K
     # dirichlet dof are built only for boundaries with related reactions
@@ -91,7 +91,7 @@ def sp_base_analysis(mesh, element_type):
     K = K.tocsc()
 
     # BOUNDARY CONDITIONS APPLICATION
-    K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, bl_corner, right_side)
+    K, R = bc.sp_apply_dirichlet(num_nodes, K, R, left_side, bl_corner, right_side)
     # SOLVER
     D = linalg.spsolve(K, R)
     reactions = K_rows.dot(D)
@@ -104,9 +104,9 @@ def sp_base_analysis(mesh, element_type):
 def vector_analysis(mesh, element_type):
     # MESH
     # mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
-    logger.debug("mesh info: %d elements, %d nodes", elements_num, nodes)
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
+    logger.debug("mesh info: %d elements, %d nodes", num_elements, num_nodes)
     # DATA
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
@@ -121,7 +121,7 @@ def vector_analysis(mesh, element_type):
 
     # ASSEMBLY
     E_array = vector.compute_E_array(mesh, element_type, matrix, fiber)
-    R = np.zeros(nodes * 2)
+    R = np.zeros(num_nodes * 2)
     K = vector.assembly(mesh, element_type, E_array, thickness)
 
     # save constrained dof rows of K
@@ -132,7 +132,7 @@ def vector_analysis(mesh, element_type):
     K = K.tocsc()
     
     # BOUNDARY CONDITIONS APPLICATION
-    K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, bl_corner, right_side)
+    K, R = bc.sp_apply_dirichlet(num_nodes, K, R, left_side, bl_corner, right_side)
     # SOLVER
     D = linalg.spsolve(K, R)
     reactions = K_rows.dot(D)

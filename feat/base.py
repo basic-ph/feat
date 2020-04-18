@@ -55,7 +55,7 @@ class Material():
             ])
 
 
-def compute_E_material(elements_num, material_map, field_data, *materials):
+def compute_E_material(num_elements, material_map, field_data, *materials):
     """
     Compute the array "E_array" containing the constitutive matrices (3x3) of each 
     element in the mesh.
@@ -70,7 +70,7 @@ def compute_E_material(elements_num, material_map, field_data, *materials):
     
     Returns
     -------
-    E_array : (elements_num, 3, 3) numpy.ndarray
+    E_array : (num_elements, 3, 3) numpy.ndarray
         three-dimensional array with as many "pages" as elements in the mesh
     """
     materials_num = len(materials)
@@ -121,11 +121,11 @@ x = lambda a, i, j: a[i][0] - a[j][0]
 y = lambda b, i, j: b[i][1] - b[j][1]
 
 
-def stiffness_matrix(e, mesh, elements, E_material, thickness, element_type, integration_points):
+def stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points):
 
     t = thickness
-    element = elements[element_type][e]
-    # print("nodes:\n", element.shape[0])
+    element = mesh.cells_dict[element_type][e]
+    # element = elements[element_type][e]
     c = mesh.points[:,:2][element]
     # print("coord:\n", c)
  
@@ -201,9 +201,9 @@ def compute_global_dof(e, mesh, element_type):
     return element_dof
 
 
-def assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points):
+def assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points):
 
-    for e in range(elements_num):
+    for e in range(num_elements):
         k = stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points)
         element_dof = compute_global_dof(e, mesh, element_type)
         for i in range(6):  # becomes 12 for T6
@@ -214,16 +214,16 @@ def assembly(K, elements_num, mesh, E_material, thickness, element_type, integra
     return K
 
 
-def sp_assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points):
-    nodes = mesh.points.shape[0]
-    for e in range(elements_num):
+def sp_assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points):
+    num_nodes = mesh.points.shape[0]
+    for e in range(num_elements):
         k = stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points)
         k_data = np.ravel(k)  # flattened 6x6 local matrix
         element_dof = compute_global_dof(e, mesh, element_type)
 
         row_ind = np.repeat(element_dof, 6)
         col_ind = np.tile(element_dof, 6)
-        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*nodes, 2*nodes))
+        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*num_nodes, 2*num_nodes))
     return K
 
 

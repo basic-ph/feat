@@ -35,8 +35,8 @@ def test_compute_K_entry():
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
     elements = mesh.cells_dict["triangle"]  # elements mapping, n-th row: nodes in n-th element
     coord = mesh.points[:,:2]  # x, y coordinates
     E_array = vector.compute_E_array(mesh, element_type, steel)
@@ -90,15 +90,15 @@ def test_vect_assembly():
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
 
     E_array = vector.compute_E_array(mesh, element_type, steel)
-    R = np.zeros(nodes * 2)
+    R = np.zeros(num_nodes * 2)
     K = vector.assembly(mesh, element_type, E_array, thickness)
     K_true = np.array([
         [9833333.33333333, 0., -5333333.33333333, 2000000., 0., -5000000., -4500000., 3000000.],
@@ -112,7 +112,7 @@ def test_vect_assembly():
     ])
     np.testing.assert_allclose(K_true, K.toarray())
 
-    K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, br_corner)
+    K, R = bc.sp_apply_dirichlet(num_nodes, K, R, left_side, br_corner)
     R = bc.apply_neumann(R, tr_corner)
  
     K_true_bc = np.array([
@@ -138,18 +138,18 @@ def test_fem():
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
 
     E_array = vector.compute_E_array(mesh, element_type, steel)
-    R = np.zeros(nodes * 2)
+    R = np.zeros(num_nodes * 2)
     K = vector.assembly(mesh, element_type, E_array, thickness)
 
-    K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, br_corner)
+    K, R = bc.sp_apply_dirichlet(num_nodes, K, R, left_side, br_corner)
     R = bc.apply_neumann(R, tr_corner)
 
     D = linalg.spsolve(K, R)

@@ -20,9 +20,9 @@ def test_stiffness_matrix():
     berillium = base.Material("Be", 288, 0.333, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    print("el num", elements_num)
-    nodes = mesh.points.shape[0]
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    print("el num", num_elements)
+    num_nodes = mesh.points.shape[0]
     E_material = base.compute_E_array(mesh, element_type, berillium)
 
     # k_0 = T6.stiffness_matrix(0, mesh, E_material, thickness, element_type, integration_points)

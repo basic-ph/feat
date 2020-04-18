@@ -16,9 +16,9 @@ def test_compute_E_array():
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
+    num_elements = mesh.cells_dict[element_type].shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
-    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, steel)
+    E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, steel)
 
     E_steel = np.array([
         (3.2e7, 8e6, 0.0),
@@ -39,10 +39,10 @@ def test_stiffness_matrix():
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
-    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, steel)
+    E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, steel)
 
     k_0 = base.stiffness_matrix(0, mesh, E_material, thickness, element_type, integration_points)
     k_1 = base.stiffness_matrix(1, mesh, E_material, thickness, element_type, integration_points)
@@ -78,20 +78,20 @@ def test_fem():
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
     
-    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, steel)
-    K = np.zeros((nodes * 2, nodes * 2))
-    R = np.zeros(nodes * 2)
-    # for e in range(elements_num):
+    E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, steel)
+    K = np.zeros((num_nodes * 2, num_nodes * 2))
+    R = np.zeros(num_nodes * 2)
+    # for e in range(num_elements):
     #     K = base.assembly(K, e, mesh, E_material, thickness, element_type, integration_points)
-    K = base.assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
+    K = base.assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points)
 
     K, R = bc.apply_dirichlet(K, R, left_side, br_corner)
     R = bc.apply_neumann(R, tr_corner)
@@ -117,23 +117,23 @@ def test_sparse_fem():
     steel = base.Material("steel", 3e7, 0.25, load_condition)
 
     mesh = meshio.read(mesh_path)
-    elements_num = mesh.cells_dict[element_type].shape[0]
-    nodes = mesh.points.shape[0]
+    num_elements = mesh.cells_dict[element_type].shape[0]
+    num_nodes = mesh.points.shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
 
     left_side = bc.DirichletBC("left side", mesh, [0, 1], 0.0)
     br_corner = bc.DirichletBC("bottom right corner", mesh, [1], 0.0)
     tr_corner = bc.NeumannBC("top right corner", mesh, [1], -1000.0)
     
-    E_material = base.compute_E_material(elements_num, material_map, mesh.field_data, steel)
-    K = sparse.csc_matrix((2 * nodes, 2 * nodes))
-    R = np.zeros(nodes * 2)
-    # for e in range(elements_num):
+    E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, steel)
+    K = sparse.csc_matrix((2 * num_nodes, 2 * num_nodes))
+    R = np.zeros(num_nodes * 2)
+    # for e in range(num_elements):
     #     K = base.sparse_assembly(K, e, mesh, E_material, thickness, element_type, integration_points)
-    K = base.sp_assembly(K, elements_num, mesh, E_material, thickness, element_type, integration_points)
+    K = base.sp_assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points)
 
     print(K)
-    K, R = bc.sp_apply_dirichlet(nodes, K, R, left_side, br_corner)
+    K, R = bc.sp_apply_dirichlet(num_nodes, K, R, left_side, br_corner)
     R = bc.apply_neumann(R, tr_corner)
 
     D = linalg.spsolve(K, R)
