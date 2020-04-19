@@ -56,23 +56,6 @@ class Material():
 
 
 def compute_E_material(num_elements, material_map, field_data, *materials):
-    """
-    Compute the array "E_array" containing the constitutive matrices (3x3) of each 
-    element in the mesh.
-    
-    Parameters
-    ----------
-    mesh : meshio.Mesh
-        Mesh object with physical groups indicating materials
-    element_type : str
-        indentify the type of elements that compose the mesh
-        it can be "triangle" or (not supported yet) "triangle6"
-    
-    Returns
-    -------
-    E_array : (num_elements, 3, 3) numpy.ndarray
-        three-dimensional array with as many "pages" as elements in the mesh
-    """
     materials_num = len(materials)
     E_material = np.zeros((materials_num,3,3)) # 3D array composed by E matrix for each material
 
@@ -121,20 +104,16 @@ x = lambda a, i, j: a[i][0] - a[j][0]
 y = lambda b, i, j: b[i][1] - b[j][1]
 
 
-def stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points):
-
+def stiffness_matrix(e, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points):
     t = thickness
-    element = mesh.cells_dict[element_type][e]
-    # element = elements[element_type][e]
-    c = mesh.points[:,:2][element]
-    # print("coord:\n", c)
- 
-    e_tag = mesh.cell_data_dict["gmsh:physical"][element_type][e] - 1  # physical tag relative to element e (identify material)
-    E = E_material[e_tag]
+    element = elements[e]
+    c = nodal_coord[element]  # indexing with an array
+
+    material_tag = material_map[e]
+    E = E_material[material_tag]
 
     # element/local stiffness matrix
     k = np.zeros((2*element.shape[0], 2*element.shape[0]))  # for T6 --> 12 by 12
-    # print("k shape ", k.shape)
 
     weights, locations = gauss_quadrature(element_type, integration_points)
     # print(weights)
@@ -192,8 +171,8 @@ def stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_p
     return k
 
 
-def compute_global_dof(e, mesh, element_type):
-    element = mesh.cells_dict[element_type][e]
+def compute_global_dof(e, elements, element_type):
+    element = elements[e]
     element_dof = np.zeros(6, dtype=np.int32)  # becomes 12 for T6
     for n in range(element.shape[0]):  # TODO check if applicable for BC
         element_dof[n*2] = element[n] * 2
@@ -201,11 +180,11 @@ def compute_global_dof(e, mesh, element_type):
     return element_dof
 
 
-def assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points):
+def assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points):
 
     for e in range(num_elements):
-        k = stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points)
-        element_dof = compute_global_dof(e, mesh, element_type)
+        k = stiffness_matrix(e, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
+        element_dof = compute_global_dof(e, elements, element_type)
         for i in range(6):  # becomes 12 for T6
             I = element_dof[i]
             for j in range(6):  # becomes 12 for T6
@@ -214,12 +193,11 @@ def assembly(K, num_elements, mesh, E_material, thickness, element_type, integra
     return K
 
 
-def sp_assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points):
-    num_nodes = mesh.points.shape[0]
+def sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points):
     for e in range(num_elements):
-        k = stiffness_matrix(e, mesh, E_material, thickness, element_type, integration_points)
+        k = stiffness_matrix(e, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
         k_data = np.ravel(k)  # flattened 6x6 local matrix
-        element_dof = compute_global_dof(e, mesh, element_type)
+        element_dof = compute_global_dof(e, elements, element_type)
 
         row_ind = np.repeat(element_dof, 6)
         col_ind = np.tile(element_dof, 6)
@@ -227,13 +205,12 @@ def sp_assembly(K, num_elements, mesh, E_material, thickness, element_type, inte
     return K
 
 
-def compute_modulus(mesh, boundary, reactions, t):
+def compute_modulus(nodal_coord, boundary, reactions, t):
 
     # pick x coord of first point in boundary
-    lenght = mesh.points[boundary.nodes[0]][0]
+    lenght = nodal_coord[boundary.nodes[0]][0]
     x_disp = boundary.value  # x displacement of node 1
     strain = x_disp / lenght
     avg_stress = abs(np.sum(reactions) / (lenght * t))
     modulus = avg_stress / strain
-
     return modulus

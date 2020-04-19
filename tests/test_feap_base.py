@@ -19,7 +19,7 @@ from feat import vector
 
 
 def test_feap_1():
-    # LOGGING
+    #LOGGING
     main_log = logging.getLogger(__name__)
     main_log.setLevel(logging.DEBUG)
     main_handler = logging.StreamHandler()  # main_log handler
@@ -54,8 +54,12 @@ def test_feap_1():
 
     # MESH
     mesh = meshio.read(mesh_path)
-    num_elements = mesh.cells_dict[element_type].shape[0]
-    num_nodes = mesh.points.shape[0]
+    elements = mesh.cells_dict[element_type]
+    nodal_coord = mesh.points[:,:2]
+    print(type(nodal_coord))
+    print(nodal_coord)
+    num_elements = elements.shape[0]
+    num_nodes = nodal_coord.shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     main_log.info("MESH INFO: %d elements, %d nodes", num_elements, num_nodes)
 
@@ -69,7 +73,7 @@ def test_feap_1():
     E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, cheese)
     K = np.zeros((num_nodes * 2, num_nodes * 2))
     R = np.zeros(num_nodes * 2)
-    K = base.assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points)
+    K = base.assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K)
 
     # contrained dof rows of K are saved now
@@ -87,7 +91,7 @@ def test_feap_1():
 
     reactions = np.dot(K_rows, D)
     main_log.debug("REACTIONS (dirichlet dofs):\n %s\n", reactions)
-    modulus = base.compute_modulus(mesh, right_side, reactions, thickness)
+    modulus = base.compute_modulus(nodal_coord, right_side, reactions, thickness)
     main_log.info("RESULTING ELASTIC MODULUS: %f", modulus)
 
     comparable_dofs = [0, 1, 2, 4, 5, 6, 7]
@@ -154,8 +158,10 @@ def test_feap_2(poisson, D_true, reactions_true):
 
     # MESH
     mesh = meshio.read(mesh_path)
-    num_elements = mesh.cells_dict[element_type].shape[0]
-    num_nodes = mesh.points.shape[0]
+    elements = mesh.cells_dict[element_type]
+    nodal_coord = mesh.points[:,:2]
+    num_elements = elements.shape[0]
+    num_nodes = nodal_coord.shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     main_log.info("MESH INFO: %d elements, %d nodes", num_elements, num_nodes)
 
@@ -171,7 +177,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.debug("E array:\n %s\n", E_material)
     K = np.zeros((num_nodes * 2, num_nodes * 2))
     R = np.zeros(num_nodes * 2)
-    K = base.assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points)
+    K = base.assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K)
 
     # contrained dof rows of K are saved now

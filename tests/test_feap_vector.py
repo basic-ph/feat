@@ -53,6 +53,8 @@ def test_feap_1():
 
     # MESH
     mesh = meshio.read(mesh_path)
+    nodal_coord = mesh.points[:,:2]
+    num_nodes = nodal_coord.shape[0]
     num_elements = mesh.cells_dict[element_type].shape[0]
     num_nodes = mesh.points.shape[0]
     main_log.info("MESH INFO: %d elements, %d nodes", num_elements, num_nodes)
@@ -87,7 +89,7 @@ def test_feap_1():
 
     reactions = K_rows.dot(D)
     main_log.debug("REACTIONS (dirichlet dofs):\n %s\n", reactions)
-    modulus = base.compute_modulus(mesh, right_side, reactions, thickness)
+    modulus = base.compute_modulus(nodal_coord, right_side, reactions, thickness)
     main_log.info("RESULTING ELASTIC MODULUS: %f", modulus)
 
     comparable_dofs = [2, 4, 5, 7]

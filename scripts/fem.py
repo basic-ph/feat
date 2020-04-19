@@ -19,8 +19,10 @@ logger = logging.getLogger(f"feat.{__name__}")
 def base_analysis(mesh, element_type):
     # MESH
     # mesh = meshio.read(mesh_path)
-    num_elements = mesh.cells_dict[element_type].shape[0]
-    num_nodes = mesh.points.shape[0]
+    elements = mesh.cells_dict[element_type]
+    nodal_coord = mesh.points[:,:2]
+    num_elements = elements.shape[0]
+    num_nodes = nodal_coord.shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     logger.debug("mesh info: %d elements, %d nodes", num_elements, num_nodes)
     # DATA
@@ -40,7 +42,7 @@ def base_analysis(mesh, element_type):
     E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, matrix, fiber)
     K = np.zeros((num_nodes * 2, num_nodes * 2))
     R = np.zeros(num_nodes * 2)
-    K = base.assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points)
+    K = base.assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
     
     # contrained dof rows of K are saved now
     reaction_dof = bc.dirichlet_dof(left_side, bl_corner)
@@ -51,7 +53,7 @@ def base_analysis(mesh, element_type):
     # SOLVER
     D = np.linalg.solve(K, R)
     reactions = np.dot(K_rows, D)
-    modulus = base.compute_modulus(mesh, right_side, reactions, thickness)
+    modulus = base.compute_modulus(nodal_coord, right_side, reactions, thickness)
     logger.debug("E2 = %f", modulus)
 
     return modulus
@@ -60,8 +62,10 @@ def base_analysis(mesh, element_type):
 def sp_base_analysis(mesh, element_type):
     # MESH
     # mesh = meshio.read(mesh_path)
-    num_elements = mesh.cells_dict[element_type].shape[0]
-    num_nodes = mesh.points.shape[0]
+    elements = mesh.cells_dict[element_type]
+    nodal_coord = mesh.points[:,:2]
+    num_elements = elements.shape[0]
+    num_nodes = nodal_coord.shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     logger.debug("mesh info: %d elements, %d nodes", num_elements, num_nodes)
     # DATA
@@ -81,7 +85,7 @@ def sp_base_analysis(mesh, element_type):
     E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, matrix, fiber)
     K = sparse.csc_matrix((2 * num_nodes, 2 * num_nodes))
     R = np.zeros(num_nodes * 2)
-    K = base.sp_assembly(K, num_elements, mesh, E_material, thickness, element_type, integration_points)
+    K = base.sp_assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
     
     # save constrained dof rows of K
     # dirichlet dof are built only for boundaries with related reactions
@@ -95,7 +99,7 @@ def sp_base_analysis(mesh, element_type):
     # SOLVER
     D = linalg.spsolve(K, R)
     reactions = K_rows.dot(D)
-    modulus = base.compute_modulus(mesh, right_side, reactions, thickness)
+    modulus = base.compute_modulus(nodal_coord, right_side, reactions, thickness)
     logger.debug("E2 = %f", modulus)
 
     return modulus
@@ -104,8 +108,11 @@ def sp_base_analysis(mesh, element_type):
 def vector_analysis(mesh, element_type):
     # MESH
     # mesh = meshio.read(mesh_path)
-    num_elements = mesh.cells_dict[element_type].shape[0]
-    num_nodes = mesh.points.shape[0]
+    elements = mesh.cells_dict[element_type]
+    nodal_coord = mesh.points[:,:2]
+    num_elements = elements.shape[0]
+    num_nodes = nodal_coord.shape[0]
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     logger.debug("mesh info: %d elements, %d nodes", num_elements, num_nodes)
     # DATA
     load_condition = "plane strain"  # "plane stress" or "plane strain"
@@ -136,7 +143,7 @@ def vector_analysis(mesh, element_type):
     # SOLVER
     D = linalg.spsolve(K, R)
     reactions = K_rows.dot(D)
-    modulus = base.compute_modulus(mesh, right_side, reactions, thickness)
+    modulus = base.compute_modulus(nodal_coord, right_side, reactions, thickness)
     logger.debug("E2 = %f", modulus)
 
     return modulus
