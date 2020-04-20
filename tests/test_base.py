@@ -9,7 +9,7 @@ from feat import boundary as bc
 from feat import vector
 
 
-def test_compute_E_array():
+def test_compute_E_material():
     element_type = "triangle"
     mesh_path = "tests/data/msh/test.msh"
     load_condition = "plane stress"  # "plane stress" or "plane strain"

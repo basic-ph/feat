@@ -56,8 +56,8 @@ class Material():
 
 
 def compute_E_material(num_elements, material_map, field_data, *materials):
-    materials_num = len(materials)
-    E_material = np.zeros((materials_num,3,3)) # 3D array composed by E matrix for each material
+    num_materials = len(materials)
+    E_material = np.zeros((num_materials,3,3)) # 3D array composed by E matrix for each material
 
     for m in materials:
         tag = field_data[m.name][0] - 1   # convert to zero offset from unit offset (gmsh)

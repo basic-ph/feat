@@ -127,9 +127,9 @@ def vector_analysis(mesh, element_type):
     right_side = bc.DirichletBC("right side", mesh, [0], 1.0)
 
     # ASSEMBLY
-    E_array = vector.compute_E_array(mesh, element_type, matrix, fiber)
+    E_array = vector.compute_E_array(num_elements, material_map, mesh.field_data, matrix, fiber)
     R = np.zeros(num_nodes * 2)
-    K = vector.assembly(mesh, element_type, E_array, thickness)
+    K = vector.assembly(num_elements, num_nodes, elements, nodal_coord, E_array, thickness)
 
     # save constrained dof rows of K
     # dirichlet dof are built only for boundaries with related reactions

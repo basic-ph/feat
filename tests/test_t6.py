@@ -25,7 +25,7 @@ def test_stiffness_matrix():
     num_elements = elements.shape[0]
     num_nodes = nodal_coord.shape[0]
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
-    E_material = base.compute_E_array(mesh, element_type, berillium)
+    E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, berillium)
 
     # k_0 = T6.stiffness_matrix(0, elements, nodal_coord, E_material, thickness, element_type, integration_points)
     k_0 = base.stiffness_matrix(0, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)

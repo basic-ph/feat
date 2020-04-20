@@ -53,10 +53,11 @@ def test_feap_1():
 
     # MESH
     mesh = meshio.read(mesh_path)
+    elements = mesh.cells_dict[element_type]
     nodal_coord = mesh.points[:,:2]
+    num_elements = elements.shape[0]
     num_nodes = nodal_coord.shape[0]
-    num_elements = mesh.cells_dict[element_type].shape[0]
-    num_nodes = mesh.points.shape[0]
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     main_log.info("MESH INFO: %d elements, %d nodes", num_elements, num_nodes)
 
     # BOUNDARY CONDITIONS INSTANCES
@@ -66,9 +67,9 @@ def test_feap_1():
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_array = vector.compute_E_array(mesh, element_type, cheese)
+    E_array = vector.compute_E_array(num_elements, material_map, mesh.field_data, cheese)
     R = np.zeros(num_nodes * 2)
-    K = vector.assembly(mesh, element_type, E_array, thickness)
+    K = vector.assembly(num_elements, num_nodes, elements, nodal_coord, E_array, thickness)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K)
 
     # save constrained dof rows of K
@@ -152,8 +153,11 @@ def test_feap_2(poisson, D_true, reactions_true):
 
     # MESH
     mesh = meshio.read(mesh_path)
-    num_elements = mesh.cells_dict[element_type].shape[0]
-    num_nodes = mesh.points.shape[0]
+    elements = mesh.cells_dict[element_type]
+    nodal_coord = mesh.points[:,:2]
+    num_elements = elements.shape[0]
+    num_nodes = nodal_coord.shape[0]
+    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     main_log.info("MESH INFO: %d elements, %d nodes", num_elements, num_nodes)
 
     # BOUNDARY CONDITIONS INSTANCES
@@ -164,10 +168,10 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.info("BOUNDARY CONDITIONS: TODO")
 
     # ASSEMBLY
-    E_array = vector.compute_E_array(mesh, element_type, rubber)
+    E_array = vector.compute_E_array(num_elements, material_map, mesh.field_data, rubber)
     main_log.debug("E array:\n %s\n", E_array)
     R = np.zeros(num_nodes * 2)
-    K = vector.assembly(mesh, element_type, E_array, thickness)
+    K = vector.assembly(num_elements, num_nodes, elements, nodal_coord, E_array, thickness)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K.todense())
 
     # save constrained dof rows of K

@@ -1,7 +1,7 @@
 import numpy as np
 from scipy import sparse
 
-def compute_E_array(mesh, element_type, *materials):
+def compute_E_array(num_elements, material_map, field_data, *materials):
     """
     Compute the array "E_array" containing the constitutive matrices data (6 entries) 
     of each element in the mesh. Normally the constituive matrix is a 3-by-3 matrix 
@@ -11,11 +11,12 @@ def compute_E_array(mesh, element_type, *materials):
     
     Parameters
     ----------
-    mesh : meshio.Mesh
-        Mesh obj with physical groups indicating materials
-    element_type : str
-        indentify the type of elements that compose the mesh
-        it can be "triangle" or (not supported yet) "triangle6"
+    num_elements : int
+        number of elements in mesh
+    material_map : numpy.ndarray
+        array containing material tag (zero offset) for evey element in mesh
+    field_data: dict
+        field_data attribute of meshio.Mesh object containing physical group tags
     *materials: feat.Material
         all Material objects present in the mesh (unpacked) 
     
@@ -24,14 +25,12 @@ def compute_E_array(mesh, element_type, *materials):
     E_array : (num_elements, 6) numpy.ndarray
         array containing constitutive matrix data for each element in the mesh
     """
-    num_elements = mesh.cells_dict[element_type].shape[0]
-    materials_num = len(materials)
+    num_materials = len(materials)
     E_array = np.zeros((num_elements, 6))
-    E_material = np.zeros((materials_num, 6)) # pre-computed array for each material
-    material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
+    E_material = np.zeros((num_materials, 6)) # pre-computed array for each material
 
     for m in materials:
-        tag = mesh.field_data[m.name][0] - 1   # convert to zero offset from unit offset (gmsh)
+        tag = field_data[m.name][0] - 1   # convert to zero offset from unit offset (gmsh)
         E_material[tag] = m.E_flat
     
     E_array = E_material[material_map]
@@ -87,7 +86,7 @@ def compute_K_entry(row, col, c, e, E_array, t):
     return k_data
 
 
-def compute_global_dof(mesh, element_type, row, col):
+def compute_global_dof(num_elements, elements, row, col):
     """
     Given the two LOCAL indices row and col, the function return two arrays containing 
     row GLOBAL indices and col GLOBAL indices for all elements. In other words it map 
@@ -95,11 +94,10 @@ def compute_global_dof(mesh, element_type, row, col):
     
     Parameters
     ----------
-    mesh : meshio.Mesh
-        Mesh object
-    element_type : str
-        indentify the type of elements that compose the mesh
-        it can be "triangle" or (not supported yet) "triangle6"
+    num_elements : int
+        number of elements in mesh
+    elements : (num_elements, nodes_per_element) numpy.ndarray
+        elements map (connectivity map), n-th row contains tags of nodes in n-th element 
     row : int
         row index of the local stiffness matrix entry
     col : int
@@ -112,8 +110,6 @@ def compute_global_dof(mesh, element_type, row, col):
     col_ind: (num_elements,) numpy.ndarray
         array of global column indices related to a certain local entry
     """
-    elements = mesh.cells_dict[element_type]
-    num_elements = mesh.cells_dict[element_type].shape[0]
     row_ind = np.zeros((num_elements))
     col_ind = np.zeros((num_elements))
 
@@ -130,17 +126,20 @@ def compute_global_dof(mesh, element_type, row, col):
     return row_ind, col_ind
     
 
-def assembly(mesh, element_type, E_array, thickness):
+def assembly(num_elements, num_nodes, elements, nodal_coord, E_array, thickness):
     """
     Assemble the global sparse stiffness matrix of the system exploiting its simmetry.
     
     Parameters
     ----------
-    mesh : meshio.Mesh
-        Mesh object
-    element_type : str
-        indentify the type of elements that compose the mesh
-        it can be "triangle" or (not supported yet) "triangle6"
+    num_elements : int
+        number of elements in mesh
+    num_nodes : int
+        number of nodes in mesh
+    elements : (num_elements, nodes_per_element) numpy.ndarray
+        elements map (connectivity map), n-th row contains tags of nodes in n-th element
+    nodal_coord : (nodes_num, 2) numpy.ndarray
+        cartesian coordinates of all nodes in the mesh expressed like: (x, y)
     E_array : (num_elements, 6) numpy.ndarray
         array containing constitutive matrix data for each element in the mesh
     thickness : float
@@ -152,13 +151,6 @@ def assembly(mesh, element_type, E_array, thickness):
         global stiffness matrix in Compressed Sparse Column format
     """
 
-    t = thickness
-    num_nodes = mesh.points.shape[0]
-    num_elements = mesh.cells_dict[element_type].shape[0]
-    # elements mapping, n-th row: nodes in n-th element
-    elements = mesh.cells_dict["triangle"]
-    coord = mesh.points[:,:2]  # x, y coordinates
-
     k_data = np.zeros((num_elements))
     row_ind = np.zeros((num_elements))
     col_ind = np.zeros((num_elements))
@@ -166,8 +158,8 @@ def assembly(mesh, element_type, E_array, thickness):
     
     # compute entries in the upper triangular matrix (without diagonal)
     for (row, col) in zip(*np.triu_indices(6, k=1)):  
-        k_data = compute_K_entry(row, col, coord, elements, E_array, t)
-        row_ind, col_ind = compute_global_dof(mesh, element_type, row, col)
+        k_data = compute_K_entry(row, col, nodal_coord, elements, E_array, thickness)
+        row_ind, col_ind = compute_global_dof(num_elements, elements, row, col)
         K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*num_nodes, 2*num_nodes))
     
     # copy previously computed entries in the lower triangular part
@@ -175,8 +167,8 @@ def assembly(mesh, element_type, E_array, thickness):
 
     # compute the diagonal entries
     for (row, col) in zip(*np.diag_indices(6)):
-        k_data = compute_K_entry(row, col, coord, elements, E_array, t)
-        row_ind, col_ind = compute_global_dof(mesh, element_type, row, col)
+        k_data = compute_K_entry(row, col, nodal_coord, elements, E_array, thickness)
+        row_ind, col_ind = compute_global_dof(num_elements, elements, row, col)
         K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*num_nodes, 2*num_nodes))
 
     return K
