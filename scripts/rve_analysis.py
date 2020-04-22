@@ -16,7 +16,7 @@ import mesh
 
 def main():
     # LOGGING (you can skip this)
-    log_lvl = logging.INFO
+    log_lvl = logging.DEBUG
     logger = logging.getLogger("feat")
     logger.setLevel(log_lvl)
     handler = logging.StreamHandler()
@@ -60,7 +60,8 @@ def main():
     offset = 1.1 * radius
     max_iter = 100000
     # mesh data
-    coarse_cls = [1.0, 0.5, 0.25, 0.12]  # coarse element dimension (far from matrix-fiber boundary)
+    # coarse_cls = [1.0, 0.5, 0.25, 0.12, 0.06]  # coarse element dimension (far from matrix-fiber boundary)
+    coarse_cls = [0.25, 0.12, 0.06]  # coarse element dimension (far from matrix-fiber boundary)
     fine_cls = [cl / 2 for cl in coarse_cls]  # fine element dimension (matrix-fiber boundary)
     # fem data
     element_type = "triangle"
@@ -68,7 +69,7 @@ def main():
     rand_gen = np.random.default_rng(19)  # random generator, accept seed as arg (reproducibility)
     
     i = 0
-    max_i = 10
+    max_i = 5
     storage = []
 
     while i < max_i:
@@ -110,7 +111,7 @@ def main():
                     moduli.append(E2)
                     prev_E2 = moduli[s-1] 
                     rel_diff = abs(E2 - prev_E2) / prev_E2  # difference relative to precedent obtained estimate
-                    if rel_diff < 0.01:
+                    if rel_diff < 0.001:
                         logger.debug("Mesh convergence obtained for simulation #%s for realization #%s", s+1, r+1)
                         logger.debug("------------------------------")
                         refined_moduli.append(E2)  # saving the last values as the valid one
@@ -118,7 +119,7 @@ def main():
 
         mean_E2 = mean(refined_moduli)
         storage = [item + [mean_E2] if item[0] == i else item for item in storage]
-        threshold = 0.01 * mean_E2  # 5% of the mean
+        threshold = 0.01 * mean_E2  # 1% of the mean value
         upper_lim = mean_E2 + threshold
         lower_lim = mean_E2 - threshold
 
@@ -128,10 +129,10 @@ def main():
         if (min_E2 > lower_lim) and (max_E2 < upper_lim):
             logger.info("Mean transverse modulus is E2 = %s", mean_E2)
             logger.info("RVE #%s of size %s containing %s fibers has been validated!", i+1, side, number)
-            break
-            # i += 1
-            # number += 10
-            # side = math.sqrt(math.pi * radius**2 * number / Vf)  # ...causing the size of the RVE to increase
+            # break
+            i += 1
+            number += 10
+            side = math.sqrt(math.pi * radius**2 * number / Vf)  # ...causing the size of the RVE to increase
         else:
             logger.info("Mean transverse modulus is E2 = %s", mean_E2)
             logger.info("RVE #%s of size %s is NOT representative!", i+1, side)
@@ -142,7 +143,7 @@ def main():
     logger.debug("Stored data:\n%s", storage)
 
     # date = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-    data_file = f"./data/output/e02.csv"
+    data_file = f"./data/output/g03.csv"
     with open(data_file, 'w', newline='') as file:
         writer = csv.writer(file, quoting=csv.QUOTE_NONNUMERIC)
         writer.writerows(storage)

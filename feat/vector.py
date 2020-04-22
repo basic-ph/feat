@@ -82,7 +82,8 @@ def compute_K_entry(row, col, c, e, E_array, t):
     else:
         E = E_array[:, E_indices[1, col]]
     # calculation of the values of that particular entry (row,col) for all elements
-    k_data = (b[row][0] * b[col][0] * E + b[row][1] * b[col][1] * E_array[:,5]) / J * t * 0.5  # reminder: J/(J**2) = 1/J
+    # k_data = (b[row][0] * b[col][0] * E + b[row][1] * b[col][1] * E_array[:,5]) / J * t * 0.5  # reminder: J/(J**2) = 1/J
+    k_data = (b[row][0] * b[col][0] * E_array[:, (row+col) % 2] + b[row][1] * b[col][1] * E_array[:,5]) / J * t * 0.5  # reminder: J/(J**2) = 1/J
     return k_data
 
 

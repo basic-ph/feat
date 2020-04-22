@@ -85,7 +85,7 @@ def sp_base_analysis(mesh, element_type):
     E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, matrix, fiber)
     K = sparse.csc_matrix((2 * num_nodes, 2 * num_nodes))
     R = np.zeros(num_nodes * 2)
-    K = base.sp_assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
+    K = base.sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
     
     # save constrained dof rows of K
     # dirichlet dof are built only for boundaries with related reactions
@@ -118,8 +118,8 @@ def vector_analysis(mesh, element_type):
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
     # MATERIAL
-    matrix = base.Material("matrix", 3.2, 0.35, load_condition)
-    fiber = base.Material("fiber", 20, 0.20, load_condition)
+    matrix = base.Material("matrix", 10, 0.3, load_condition)
+    fiber = base.Material("fiber", 20, 0.3, load_condition)
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
@@ -163,7 +163,7 @@ if __name__ == "__main__":
     np.set_printoptions(linewidth=200)
     
     start_time = time.time()
-    mesh = meshio.read("./data/msh/refined_2.msh")
+    mesh = meshio.read("./data/msh/perf_25.msh")
     # E = base_analysis(mesh, "triangle")
     # E = sp_base_analysis(mesh, "triangle")
     E = vector_analysis(mesh, "triangle")

@@ -36,7 +36,7 @@ def main():
         tmp_E2_data = []  # list containing all refined E2 for different realizations of the same RVE
         for r in range(realizations):
             # takes the last item (maximus s value) of data regarding rve #i and realiz #r
-            E2_refined = [item[5] for item in raw_data if item[:2] == [i, r]][-1]
+            E2_refined = [round(item[5], 3) for item in raw_data if item[:2] == [i, r]][-1]
             tmp_E2_data.append(E2_refined)
         data.append(tmp_E2_data)
 
@@ -47,7 +47,6 @@ def main():
     ax1.set_ylabel(r"$\overline{E2} \quad[unit]$")
     ax1.set_title(f'RVE Convergence Analysis')
     # ax1.xaxis.set_major_locator(MaxNLocator(integer=True))
-
     # fig1.text(0.5, 0.8, '$V_f = 15\%$', fontsize="large")
 
     plt.show()
