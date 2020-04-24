@@ -12,6 +12,9 @@ from feat import base, vector
 from feat import boundary as bc
 
 
+logger = logging.getLogger(__name__)
+
+
 def base_analysis(mesh, element_type):
     # MESH
     # mesh = meshio.read(mesh_path)
@@ -156,13 +159,13 @@ def vector_analysis(mesh, element_type, post_process=False, vtk_filename=None):
 if __name__ == "__main__":
     # logger
     log_lvl = logging.DEBUG
-    logger = logging.getLogger()
-    logger.setLevel(log_lvl)
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_lvl)
     handler = logging.StreamHandler()
     handler.setLevel(log_lvl)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    root_logger.addHandler(handler)
     
     np.set_printoptions(linewidth=200)
     

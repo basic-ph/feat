@@ -8,6 +8,9 @@ import numpy as np
 import pygmsh
 
 
+logger = logging.getLogger(__name__)
+
+
 def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_iter):
    
     get_dist = lambda x_0, y_0, x_1, y_1: np.sqrt((x_0 - x_1)**2 + (y_0 - y_1)**2)
@@ -116,13 +119,13 @@ def create_mesh(geo_path, msh_path, radius, number, side, x_array, y_array, coar
 if __name__ == "__main__":
     # logger
     log_lvl = logging.DEBUG
-    logger = logging.getLogger()
-    logger.setLevel(log_lvl)
+    root_logger = logging.getLogger()
+    root_logger.setLevel(log_lvl)
     handler = logging.StreamHandler()
     handler.setLevel(log_lvl)
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     handler.setFormatter(formatter)
-    logger.addHandler(handler)
+    root_logger.addHandler(handler)
 
     geo_path = "data/geo/refined_2.geo"
     msh_path = "data/msh/refined_2.msh"
