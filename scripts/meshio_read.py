@@ -1,6 +1,6 @@
 import meshio
 
-mesh = meshio.read("./data/msh/base.msh")  # change me
+mesh = meshio.read("../data/msh/base.msh")  # change me
 
 print("mesh.points:\n", mesh.points)
 # OUTPUT

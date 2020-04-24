@@ -12,10 +12,6 @@ from feat import base, vector
 from feat import boundary as bc
 
 
-# LOGGING
-logger = logging.getLogger(f"feat.{__name__}")
-
-
 def base_analysis(mesh, element_type):
     # MESH
     # mesh = meshio.read(mesh_path)
@@ -105,7 +101,7 @@ def sp_base_analysis(mesh, element_type):
     return modulus
 
 
-def vector_analysis(mesh, element_type, post_process=False):
+def vector_analysis(mesh, element_type, post_process=False, vtk_filename=None):
     # MESH
     # mesh = meshio.read(mesh_path)
     elements = mesh.cells_dict[element_type]
@@ -147,11 +143,12 @@ def vector_analysis(mesh, element_type, post_process=False):
     logger.debug("E2 = %f", modulus)
 
     if post_process:
+        # D_ready = np.column_stack((D[::2], D[1::2], np.zeros(num_nodes)))
         D_ready = np.column_stack((D[::2], D[1::2]))
         D_dict = {"displacement": D_ready}
         mesh.point_data = D_dict
-        mesh.write("perf_400.vtk")
-        logging.debug("written .vtk file")
+        mesh.write(f"../data/vtk/{vtk_filename}.vtk")
+        logger.debug("VTK file created")
 
     return modulus
 
@@ -159,7 +156,7 @@ def vector_analysis(mesh, element_type, post_process=False):
 if __name__ == "__main__":
     # logger
     log_lvl = logging.DEBUG
-    logger = logging.getLogger("feat")
+    logger = logging.getLogger()
     logger.setLevel(log_lvl)
     handler = logging.StreamHandler()
     handler.setLevel(log_lvl)
@@ -170,8 +167,8 @@ if __name__ == "__main__":
     np.set_printoptions(linewidth=200)
     
     start_time = time.time()
-    mesh = meshio.read("./data/msh/perf_400.msh")
+    mesh = meshio.read("../data/msh/perf_25.msh")
     # E = base_analysis(mesh, "triangle")
     # E = sp_base_analysis(mesh, "triangle")
-    E = vector_analysis(mesh, "triangle", post_process=True)
+    E = vector_analysis(mesh, "triangle", post_process=True, vtk_filename="perf_25")
     print(f"--- {time.time() - start_time} seconds ---")

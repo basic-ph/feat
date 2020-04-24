@@ -15,15 +15,6 @@ import mesh
 
 
 def main():
-    # LOGGING (you can skip this)
-    log_lvl = logging.DEBUG
-    logger = logging.getLogger("feat")
-    logger.setLevel(log_lvl)
-    handler = logging.StreamHandler()
-    handler.setLevel(log_lvl)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    logger.addHandler(handler)
 
     # argument parser creation and setup
     desc = (
@@ -143,12 +134,22 @@ def main():
     logger.debug("Stored data:\n%s", storage)
 
     # date = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-    data_file = f"./data/output/g03.csv"
+    data_file = f"../data/csv/g03.csv"
     with open(data_file, 'w', newline='') as file:
         writer = csv.writer(file, quoting=csv.QUOTE_NONNUMERIC)
         writer.writerows(storage)
 
 if __name__ == "__main__":
+    # LOGGING (you can skip this)
+    log_lvl = logging.DEBUG
+    logger = logging.getLogger()
+    logger.setLevel(log_lvl)
+    handler = logging.StreamHandler()
+    handler.setLevel(log_lvl)
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+
     start_time = time.time()
     main()
     print(f"--- {time.time() - start_time} seconds ---")

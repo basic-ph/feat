@@ -84,5 +84,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # main("./data/output/rve_d.csv")
     main()
