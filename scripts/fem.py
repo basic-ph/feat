@@ -105,7 +105,7 @@ def sp_base_analysis(mesh, element_type):
     return modulus
 
 
-def vector_analysis(mesh, element_type):
+def vector_analysis(mesh, element_type, post_process=False):
     # MESH
     # mesh = meshio.read(mesh_path)
     elements = mesh.cells_dict[element_type]
@@ -146,6 +146,13 @@ def vector_analysis(mesh, element_type):
     modulus = base.compute_modulus(nodal_coord, right_side, reactions, thickness)
     logger.debug("E2 = %f", modulus)
 
+    if post_process:
+        D_ready = np.column_stack((D[::2], D[1::2]))
+        D_dict = {"displacement": D_ready}
+        mesh.point_data = D_dict
+        mesh.write("perf_400.vtk")
+        logging.debug("written .vtk file")
+
     return modulus
 
 
@@ -163,8 +170,8 @@ if __name__ == "__main__":
     np.set_printoptions(linewidth=200)
     
     start_time = time.time()
-    mesh = meshio.read("./data/msh/perf_25.msh")
+    mesh = meshio.read("./data/msh/perf_400.msh")
     # E = base_analysis(mesh, "triangle")
     # E = sp_base_analysis(mesh, "triangle")
-    E = vector_analysis(mesh, "triangle")
+    E = vector_analysis(mesh, "triangle", post_process=True)
     print(f"--- {time.time() - start_time} seconds ---")

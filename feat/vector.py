@@ -37,53 +37,29 @@ def compute_E_array(num_elements, material_map, field_data, *materials):
     return E_array
 
 
-def compute_K_entry(row, col, c, e, E_array, t):
-    """
-    Evaluate the entry of the local stiffness matrix (K), identified by the local 
-    indices (row, col), for all elements in the mesh using numpy vectorization.
-    
-    Parameters
-    ----------
-    row : int
-        row index of the local stiffness matrix entry
-    col : int
-        column index of the local stiffness matrix entry
-    c : (nodes_num, 2) numpy.ndarray
-        cartesian coordinates of all nodes in the mesh expressed like: (x, y)
-    e : (num_elements, nodes_per_element) numpy.ndarray
-        elements map (connectivity map), n-th row contains tags of nodes in n-th element
-    E_array : (num_elements, 6) numpy.ndarray
-        array containing essential constitutive matrix entries for each element in the mesh
-    t : float
-        the thickness (z direction) of the 2D domain
-    
-    Returns
-    -------
-    k_data: (num_elements,) numpy.ndarray
-        values of the entry K(row,col) of the local stiffness matrix for all elements
-    """
-    # Jacobian (determinant of Jacobian matrix) for all elements
-    J = ((c[e[:,1]][:,0] - c[e[:,0]][:,0]) * (c[e[:,2]][:,1] - c[e[:,0]][:,1]) -
-        (c[e[:,2]][:,0] - c[e[:,0]][:,0]) * (c[e[:,1]][:,1] - c[e[:,0]][:,1]))
-    # compact form of the classic B matrix evaluated for all elements
-    b = np.array([
-        (c[e[:,1]][:,1] - c[e[:,2]][:,1], c[e[:,2]][:,0] - c[e[:,1]][:,0]),
-        (c[e[:,2]][:,0] - c[e[:,1]][:,0], c[e[:,1]][:,1] - c[e[:,2]][:,1]),
-        (c[e[:,2]][:,1] - c[e[:,0]][:,1], c[e[:,0]][:,0] - c[e[:,2]][:,0]),
-        (c[e[:,0]][:,0] - c[e[:,2]][:,0], c[e[:,2]][:,1] - c[e[:,0]][:,1]),
-        (c[e[:,0]][:,1] - c[e[:,1]][:,1], c[e[:,1]][:,0] - c[e[:,0]][:,0]),
-        (c[e[:,1]][:,0] - c[e[:,0]][:,0], c[e[:,0]][:,1] - c[e[:,1]][:,1]),
-    ])
-    # data used for indexing E_array selecting the right entry of the constitutive matrix depending on row,col indices
-    E_indices = np.array([(0, 1, 0, 1, 0, 1), (1, 3, 1, 3, 1, 3)])
+X = lambda c, e, i, j: c[e[:,i]][:,0] - c[e[:,j]][:,0]
+Y = lambda c, e, i, j: c[e[:,i]][:,1] - c[e[:,j]][:,1]
 
-    if (row % 2 == 0):
-        E = E_array[:, E_indices[0, col]]
-    else:
-        E = E_array[:, E_indices[1, col]]
-    # calculation of the values of that particular entry (row,col) for all elements
-    # k_data = (b[row][0] * b[col][0] * E + b[row][1] * b[col][1] * E_array[:,5]) / J * t * 0.5  # reminder: J/(J**2) = 1/J
-    k_data = (b[row][0] * b[col][0] * E_array[:, (row+col) % 2] + b[row][1] * b[col][1] * E_array[:,5]) / J * t * 0.5  # reminder: J/(J**2) = 1/J
+
+def compute_K_entry(row, col, c, e, E_array, t):
+    J = X(c,e,1,0) * Y(c,e,2,0) - X(c,e,2,0) * Y(c,e,1,0)
+
+    b = np.array([
+        [Y(c,e,1,2), Y(c,e,2,0), Y(c,e,0,1)],
+        [X(c,e,2,1), X(c,e,0,2), X(c,e,1,0)],
+    ])
+
+    A = row % 2
+    B = row + (-row // 2)
+    C = col % 2
+    D = col + (-col // 2)
+
+    E = int(row % 2 == 0)
+    F = (row + (-1)**row) + (-(row + (-1)**row)//2)
+    G = int(col % 2 == 0)
+    H = (col + (-1)**col) + (-(col + (-1)**col)//2)
+
+    k_data = (b[A,B] * b[C,D] * E_array[:,(row+col) % 2] + b[E,F] * b[G,H] * E_array[:,5]) / J * t * 0.5
     return k_data
 
 
