@@ -91,6 +91,7 @@ def apply_neumann(R, *conditions):
 
 
 def sp_apply_dirichlet(nodes, K, R, *conditions):
+    # TODO check if K is in CSC format!!!
     dir_dof, dir_values = build_dirichlet_data(*conditions)
     R[dir_dof] = dir_values
     # mask of booleans checking if (row) indices are present in dirichlet dof array

@@ -193,15 +193,40 @@ def assembly(K, num_elements, elements, nodal_coord, material_map, E_material, t
     return K
 
 
+# def sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points):
+#     for e in range(num_elements):
+#         k = stiffness_matrix(e, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
+#         k_data = np.ravel(k)  # flattened 6x6 local matrix
+#         element_dof = compute_global_dof(e, elements, element_type)
+
+#         row_ind = np.repeat(element_dof, 6)
+#         col_ind = np.tile(element_dof, 6)
+#         K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*num_nodes, 2*num_nodes))
+#     return K
+
+
 def sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points):
+    data_tmp = []
+    row_data = []
+    col_data = []
     for e in range(num_elements):
         k = stiffness_matrix(e, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
         k_data = np.ravel(k)  # flattened 6x6 local matrix
-        element_dof = compute_global_dof(e, elements, element_type)
+        data_tmp.append(k_data)
 
+        element_dof = compute_global_dof(e, elements, element_type)
         row_ind = np.repeat(element_dof, 6)
         col_ind = np.tile(element_dof, 6)
-        K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*num_nodes, 2*num_nodes))
+        row_data.append(row_ind)
+        col_data.append(col_ind)
+
+    row = np.concatenate(row_data)
+    col = np.concatenate(col_data)
+    data = np.concatenate(data_tmp)
+    logger.debug("data shape is: %s", data.shape)
+    logger.debug("data memory usage is: %s", data.nbytes)
+    K = sparse.coo_matrix((data,(row, col)), shape=(2*num_nodes, 2*num_nodes))
+    K = K.tocsc()
     return K
 
 
