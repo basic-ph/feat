@@ -118,7 +118,7 @@ def vector_analysis(mesh, element_type, post_process=False, vtk_filename=None):
     thickness = 1
     # MATERIAL
     matrix = base.Material("matrix", 10, 0.3, load_condition)
-    fiber = base.Material("fiber", 20, 0.3, load_condition)
+    fiber = base.Material("fiber", 100, 0.3, load_condition)
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
@@ -146,8 +146,7 @@ def vector_analysis(mesh, element_type, post_process=False, vtk_filename=None):
     logger.debug("E2 = %f", modulus)
 
     if post_process:
-        # D_ready = np.column_stack((D[::2], D[1::2], np.zeros(num_nodes)))
-        D_ready = np.column_stack((D[::2], D[1::2]))
+        D_ready = np.column_stack((D[::2], D[1::2], np.zeros(num_nodes)))
         D_dict = {"displacement": D_ready}
         mesh.point_data = D_dict
         mesh.write(f"../data/vtk/{vtk_filename}.vtk")
@@ -170,8 +169,8 @@ if __name__ == "__main__":
     np.set_printoptions(linewidth=200)
     
     start_time = time.time()
-    mesh = meshio.read("../data/msh/perf_100.msh")
+    mesh = meshio.read("../data/msh/terada_30F.msh")
     # E = base_analysis(mesh, "triangle")
-    E = sp_base_analysis(mesh, "triangle")
-    # E = vector_analysis(mesh, "triangle", post_process=False, vtk_filename="perf_25")
+    # E = sp_base_analysis(mesh, "triangle")
+    E = vector_analysis(mesh, "triangle", post_process=True, vtk_filename="terada_30F")
     print(f"--- {time.time() - start_time} seconds ---")

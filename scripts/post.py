@@ -30,7 +30,7 @@ def main():
         for row in reader:
             storage.append(row)
 
-    realizations = 30  # number of realizations to compare
+    realizations = 1  # number of realizations to compare
     i_max = int(storage[-1][0]+1)  # rve size number of the last data row
     if args.group:
         rows = math.ceil(i_max / 2)  # 2 is the num of columns wanted
@@ -71,14 +71,16 @@ def main():
     # create RVE convergence plot
     fig2, ax2 = plt.subplots()
     i_data = list(range(1, i_max+1))
+    num_fib_data = [i*20 for i in i_data]
+    # num_fib_data = [10 * 2**i for i in i_data]
     print(i_data)
     print(mean_E2_data)
 
-    ax2.plot(i_data, mean_E2_data, "o-g")
-    ax2.set_xlabel("RVE id")
+    ax2.plot(num_fib_data, mean_E2_data, "o-g")
+    ax2.set_xlabel("Number of fibers in the RVE")
     ax2.set_ylabel(r"$\overline{E2} \quad[unit]$")
     ax2.set_title('RVE Convergence Analysis')
-    ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
+    # ax2.xaxis.set_major_locator(MaxNLocator(integer=True))
 
     plt.show()
 

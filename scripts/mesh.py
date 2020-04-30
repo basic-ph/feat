@@ -11,13 +11,11 @@ import pygmsh
 logger = logging.getLogger(__name__)
 
 
-def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_iter):
+def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_iter, x_list, y_list):
    
-    get_dist = lambda x_0, y_0, x_1, y_1: np.sqrt((x_0 - x_1)**2 + (y_0 - y_1)**2)
+    get_dist = lambda x_0, y_0, x_1, y_1: math.sqrt((x_0 - x_1)**2 + (y_0 - y_1)**2)
 
-    x_array = np.zeros(number)  # array with x coordinate of centers
-    y_array = np.zeros(number)  # array with y coordinate of centers
-    i = 0  # counter for array indexing
+    i = len(x_list)  # counter for array indexing
     k = 0  # iterations counter
 
     while k < max_iter:
@@ -27,7 +25,7 @@ def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_
         y = offset + (side - 2*offset)* rand_gen.random()
 
         for j in range(i):
-            distance = get_dist(x, y, x_array[j], y_array[j])
+            distance = get_dist(x, y, x_list[j], y_list[j])
             if distance > min_distance:
                 valid = True
             else:
@@ -35,21 +33,21 @@ def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_
                 break  # exit the loop when the first intersection is found
 
         if valid:  # if no intersection is found center coordinates are added to arrays
-            x_array[i] = x
-            y_array[i] = y
+            x_list.append(x)
+            y_list.append(y)
             i += 1
         
         if i == number:
             break
 
-    if i < (number -1):
+    if i < (number):
         logger.warning("Fiber centers not found!!! exit...")
         sys.exit()
 
-    return x_array, y_array
+    return x_list, y_list
 
 
-def create_mesh(geo_path, msh_path, radius, number, side, x_array, y_array, coarse_cl, fine_cl):
+def create_mesh(geo_path, msh_path, radius, number, side, x_list, y_list, coarse_cl, fine_cl):
     
     geom = pygmsh.built_in.Geometry()
 
@@ -71,8 +69,8 @@ def create_mesh(geo_path, msh_path, radius, number, side, x_array, y_array, coar
     fiber_surfaces = []  # list of gmsh surfaces related to fibers
 
     for n in range(number):
-        center = geom.add_point([x_array[n], y_array[n], 0], coarse_cl)
-        circle = geom.add_circle([x_array[n], y_array[n], 0], radius, lcar=coarse_cl)
+        center = geom.add_point([x_list[n], y_list[n], 0], coarse_cl)
+        circle = geom.add_circle([x_list[n], y_list[n], 0], radius, lcar=coarse_cl)
         circle_loops.append(circle.line_loop)
         geom.add_raw_code(f"Point{{{center.id}}} In Surface{{{circle.plane_surface.id}}};")
         fiber_surfaces.append(circle.plane_surface)
@@ -127,14 +125,14 @@ if __name__ == "__main__":
     handler.setFormatter(formatter)
     root_logger.addHandler(handler)
 
-    geo_path = "data/geo/refined_2.geo"
-    msh_path = "data/msh/refined_2.msh"
+    geo_path = "../data/geo/refined_2.geo"
+    msh_path = "../data/msh/terada_30F.msh"
     max_iter = 100000
 
     # RVE logic
     Vf = 0.30  # fiber volume fraction
     radius = 1.0
-    number = 50
+    number = 30
     side = math.sqrt(math.pi * radius**2 * number / Vf)
     print("rve side = ", side)
     min_distance = 2.1 * radius
@@ -144,16 +142,27 @@ if __name__ == "__main__":
 
     rg = np.random.default_rng(19)  # random generator, accept seed as arg (reproducibility)
 
-    x_array, y_array = get_fiber_centers(rg, radius, number, side, min_distance, offset, max_iter)
-
+    x_list = [
+        4.477015140636965, 3.300070757836716, 7.373705098213486, 4.391170095684478,
+        5.465886648631734, 2.446386464460651, 1.2239329865870123, 8.586118632630855,
+        8.973020999749487, 1.4037057884961852
+    ]
+    y_list = [
+        8.537755727601748, 1.582386474665313, 5.427519658891324, 6.026362684282338,
+        1.9917791185075826, 7.664701411635054, 5.76315679939553, 2.851615342928181,
+        9.055487089785053, 2.581815590004845
+    ]
+    x_list, y_list = get_fiber_centers(rg, radius, number, side, min_distance, offset, max_iter, x_list, y_list)
+    root_logger.debug(x_list)
+    root_logger.debug(y_list)
     mesh = create_mesh(
         geo_path,
         msh_path,
         radius,
         number,
         side,
-        x_array,
-        y_array,
+        x_list,
+        y_list,
         coarse_cl,
         fine_cl
     )
