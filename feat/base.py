@@ -223,8 +223,6 @@ def sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map,
     row = np.concatenate(row_data)
     col = np.concatenate(col_data)
     data = np.concatenate(data_tmp)
-    logger.debug("data shape is: %s", data.shape)
-    logger.debug("data memory usage is: %s", data.nbytes)
     K = sparse.coo_matrix((data,(row, col)), shape=(2*num_nodes, 2*num_nodes))
     K = K.tocsc()
     return K

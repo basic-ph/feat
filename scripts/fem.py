@@ -3,14 +3,15 @@ import logging
 import sys
 import time
 
+import matplotlib.pyplot as plt
 import meshio
 import numpy as np
 from scipy import sparse
 from scipy.sparse import linalg
 
-from feat import base, vector
+from feat import base
 from feat import boundary as bc
-
+from feat import vector
 
 logger = logging.getLogger(__name__)
 
@@ -29,8 +30,8 @@ def base_analysis(mesh, element_type):
     load_condition = "plane strain"  # TODO also this could be removed 'cause we need only plane strain case
     thickness = 1  # TODO make this a passed argument?
     # MATERIAL
-    matrix = base.Material("matrix", 3.2, 0.35, load_condition)
-    fiber = base.Material("fiber", 20, 0.20, load_condition)
+    matrix = base.Material("matrix", 10, 0.3, load_condition)
+    fiber = base.Material("fiber", 100, 0.3, load_condition)
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
@@ -72,8 +73,8 @@ def sp_base_analysis(mesh, element_type):
     load_condition = "plane strain"  # TODO also this could be removed 'cause we need only plane strain case
     thickness = 1  # TODO make this a passed argument?
     # MATERIAL
-    matrix = base.Material("matrix", 3.2, 0.35, load_condition)
-    fiber = base.Material("fiber", 20, 0.20, load_condition)
+    matrix = base.Material("matrix", 10, 0.3, load_condition)
+    fiber = base.Material("fiber", 100, 0.3, load_condition)
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
@@ -169,8 +170,8 @@ if __name__ == "__main__":
     np.set_printoptions(linewidth=200)
     
     start_time = time.time()
-    mesh = meshio.read("../data/msh/terada_30F.msh")
+    mesh = meshio.read("../data/msh/perf_25.msh")
     # E = base_analysis(mesh, "triangle")
-    # E = sp_base_analysis(mesh, "triangle")
-    E = vector_analysis(mesh, "triangle", post_process=True, vtk_filename="terada_30F")
+    E = sp_base_analysis(mesh, "triangle")
+    # E = vector_analysis(mesh, "triangle", post_process=False, vtk_filename="terada_30F")
     print(f"--- {time.time() - start_time} seconds ---")
