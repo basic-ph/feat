@@ -28,7 +28,7 @@ def test_compute_E_array():
     ])
     np.testing.assert_allclose(E_array_true, E_array)
 
-
+# @pytest.mark.skip()
 def test_compute_K_entry():
     mesh_path = "tests/data/msh/test.msh"
     
@@ -46,11 +46,21 @@ def test_compute_K_entry():
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     E_array = vector.compute_E_array(num_elements, material_map, mesh.field_data, steel)
 
+    X = lambda c, e, i, j: c[e[:,i]][:,0] - c[e[:,j]][:,0]
+    Y = lambda c, e, i, j: c[e[:,i]][:,1] - c[e[:,j]][:,1]
+    c = nodal_coord
+    e = elements
+    J = X(c,e,1,0) * Y(c,e,2,0) - X(c,e,2,0) * Y(c,e,1,0)
+    b = np.array([
+        [Y(c,e,1,2), Y(c,e,2,0), Y(c,e,0,1)],
+        [X(c,e,2,1), X(c,e,0,2), X(c,e,1,0)],
+    ])
+
     row_0, col_0 = np.unravel_index(0, (6,6))
-    k_0 = vector.compute_K_entry(row_0, col_0, nodal_coord, elements, E_array, thickness)
+    k_0 = vector.compute_K_entry(row_0, col_0, nodal_coord, elements, b, J, E_array, thickness)
     
     row_35, col_35 = np.unravel_index(35, (6,6))
-    k_35 = vector.compute_K_entry(row_35, col_35, nodal_coord, elements, E_array, thickness)
+    k_35 = vector.compute_K_entry(row_35, col_35, nodal_coord, elements, b, J, E_array, thickness)
 
     k_0_true = np.array([5333333.33333333, 4500000.])
     k_35_true = np.array([12000000., 14000000.])

@@ -25,3 +25,8 @@ Data summarized:
     - sp_assebly                        2.212 s
     - sparse.linalg.spsolve             0.256 s
     - sp_apply_dirichlet                0.035 s
+
+- vector_analysis REDO!!!               0.706 s
+    - assembly                          0.399 s
+    - sparse.linalg.spsolve             0.258 s
+    - sp_apply_dirichlet                0.034 s
