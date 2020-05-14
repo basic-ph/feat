@@ -170,8 +170,8 @@ if __name__ == "__main__":
     np.set_printoptions(linewidth=200)
     
     start_time = time.time()
-    mesh = meshio.read("../data/msh/perf_100.msh")
+    mesh = meshio.read("../data/msh/perf_25.msh")
     # E = base_analysis(mesh, "triangle")
-    # E = sp_base_analysis(mesh, "triangle")
-    E = vector_analysis(mesh, "triangle", post_process=False, vtk_filename="terada_30F")
+    E = sp_base_analysis(mesh, "triangle")
+    # E = vector_analysis(mesh, "triangle", post_process=False, vtk_filename="reboot_a")
     print(f"--- {time.time() - start_time} seconds ---")

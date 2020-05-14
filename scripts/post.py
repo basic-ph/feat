@@ -71,7 +71,7 @@ def main():
     # create RVE convergence plot
     fig2, ax2 = plt.subplots()
     i_data = list(range(1, i_max+1))
-    num_fib_data = [i*20 for i in i_data]
+    num_fib_data = [i*10 for i in i_data]
     # num_fib_data = [10 * 2**i for i in i_data]
     print(i_data)
     print(mean_E2_data)

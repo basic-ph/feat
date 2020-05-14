@@ -58,10 +58,11 @@ def main():
 
     
     i = 0
-    max_i = 15
+    max_i = 7
     storage = []
     x_centers = []  # array with x coordinate of centers
     y_centers = []
+    old_side = None    
 
     while i < max_i:
         logger.info("------------------------------------------------------------")
@@ -71,15 +72,15 @@ def main():
             logger.debug("Analysis of realization #%s", r+1)
             # obtaining centers coordinates using RSA algorithm
             rand_gen = np.random.default_rng(7)  # random generator, accept seed as arg (reproducibility)
-            x_centers, y_centers = mesh.get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_iter, x_centers, y_centers)
+            x_centers, y_centers = mesh.get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_iter, x_centers, y_centers, old_side)
             logger.debug("First fiber center obtained is: (%s, %s)", x_centers[0], y_centers[0])
             logger.debug("Fiber centers lenght: %s", len(x_centers))
             moduli = []
 
             for s in range(len(coarse_cls)):
-                filename = f"rve-{i}-{r}-{s}"
+                filename = f"validation-{i}-{r}-{s}"
                 geo_path = "../data/geo/" + filename + ".geo"
-                msh_path = "../data/msh/" + filename + ".msh"
+                msh_path = "../data/reboot/" + filename + ".msh"
                 coarse_cl = coarse_cls[s]  # 
                 fine_cl = fine_cls[s]
                 mesh_obj = mesh.create_mesh(
@@ -96,7 +97,7 @@ def main():
                 num_nodes = mesh_obj.points.shape[0]
                 logger.debug("Created mesh details: coarse cl: %s | fine cl: %s | nodes: %s", coarse_cl, fine_cl, num_nodes)            
                 # run FEM simulation on the current realization and mesh                
-                E2 = analysis(mesh_obj, element_type)
+                E2 = analysis(mesh_obj, element_type, post_process=True, vtk_filename=filename)  # !!! works only with vector
                 storage.append([i, r, s, side, num_nodes, E2])
                 if s == 0:
                     moduli.append(E2) # store the value obtained for mesh convergence validation
@@ -113,6 +114,7 @@ def main():
         mean_E2 = mean(refined_moduli)
         storage = [item + [mean_E2] if item[0] == i else item for item in storage]
 
+        old_side = side  # saving the present side lenght for the next domain 
         i += 1
         number += 10
         side = math.sqrt(math.pi * radius**2 * number / Vf)  # ...causing the size of the RVE to increase
@@ -120,7 +122,7 @@ def main():
     logger.debug("Stored data:\n%s", storage)
 
     # date = datetime.now().strftime('%Y-%m-%dT%H-%M-%S')
-    data_file = f"../data/csv/terada011.csv"
+    data_file = f"../data/csv/reboot2.csv"
     with open(data_file, 'w', newline='') as file:
         writer = csv.writer(file, quoting=csv.QUOTE_NONNUMERIC)
         writer.writerows(storage)

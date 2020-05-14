@@ -11,7 +11,7 @@ import pygmsh
 logger = logging.getLogger(__name__)
 
 
-def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_iter, x_list, y_list):
+def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_iter, x_list, y_list, old_side):
    
     get_dist = lambda x_0, y_0, x_1, y_1: math.sqrt((x_0 - x_1)**2 + (y_0 - y_1)**2)
 
@@ -24,6 +24,16 @@ def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_
         x = offset + (side - 2*offset)* rand_gen.random()
         y = offset + (side - 2*offset)* rand_gen.random()
 
+        # logger.debug("oldside: %s", old_side)
+        # logger.debug("x y: %s %s", x, y)
+        # check center outside old domain
+        if old_side is not None:
+            if (x < old_side) and (y < old_side):
+                # logger.debug("skip current (x,y)")
+                continue
+        # logger.debug("checking superposition...")
+
+        # check superposition with other fibers
         for j in range(i):
             distance = get_dist(x, y, x_list[j], y_list[j])
             if distance > min_distance:
@@ -107,7 +117,7 @@ def create_mesh(geo_path, msh_path, radius, number, side, x_list, y_list, coarse
     mesh = pygmsh.generate_mesh(
         geom,
         # geo_filename=str(geo_path),  # uncomment this for saving geo and msh
-        # msh_filename=str(msh_path),
+        msh_filename=str(msh_path),
         verbose=False,
         dim=2,
     )
@@ -126,13 +136,13 @@ if __name__ == "__main__":
     root_logger.addHandler(handler)
 
     geo_path = "../data/geo/refined_2.geo"
-    msh_path = "../data/msh/terada_30F.msh"
+    msh_path = "../data/reboot/validation.msh"
     max_iter = 100000
 
     # RVE logic
     Vf = 0.30  # fiber volume fraction
     radius = 1.0
-    number = 30
+    number = 10
     side = math.sqrt(math.pi * radius**2 * number / Vf)
     print("rve side = ", side)
     min_distance = 2.1 * radius
