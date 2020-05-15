@@ -24,11 +24,9 @@ def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_
         x = offset + (side - 2*offset)* rand_gen.random()
         y = offset + (side - 2*offset)* rand_gen.random()
 
-        # logger.debug("oldside: %s", old_side)
-        # logger.debug("x y: %s %s", x, y)
         # check center outside old domain
         if old_side is not None:
-            if (x < old_side) and (y < old_side):
+            if (x < old_side + radius) and (y < old_side + radius):
                 # logger.debug("skip current (x,y)")
                 continue
         # logger.debug("checking superposition...")
