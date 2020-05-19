@@ -16,8 +16,8 @@ jobs:
       - name: Conda environment creation
         run: |
           conda env create -f environment.yml
-          source activate feat
           pip install -e .
       - name: Testing with pytest
         run: |
+          source activate feat
           pytest
