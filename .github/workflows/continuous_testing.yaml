@@ -20,5 +20,4 @@ jobs:
           pip install -e .
       - name: Testing with pytest
         run: |
-          source activate feat
           pytest
