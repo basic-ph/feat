@@ -44,7 +44,7 @@ def main():
     radius = 1.0  # fiber radius
     min_distance = 2.1 * radius
     offset = 1.1 * radius
-    max_iter = 100000
+    max_iter = 1000000
     coarse_cls = [0.25, 0.12, 0.06]  #  [1.0, 0.5, 0.25, 0.12, 0.06] coarse element dimension (far from matrix-fiber boundary)
     fine_cls = [cl / 2 for cl in coarse_cls]  # fine element dimension (matrix-fiber boundary)
     element_type = "triangle"
@@ -52,9 +52,9 @@ def main():
     data = []  # list of [s: id del sample, n: numero di fibre nel dominiio, coarse_cl, side, num_nodes, E2, {0|1}]
     s = 0
 
-    seeds = [96, 11, 50, 46, 88, 53, 89, 15, 33, 49]
-    samples = 3  # decides how many generations (runs) have to be completed
-    max_n = 30  # maximus number of fibers, decides how many domains should be generated for each "sample"
+    seeds = [96, 11, 50, 46, 88, 53, 89, 15, 33, 49]  # [96, 11, 50, 46, 88, 53, 89, 15, 33, 49]
+    samples = 5  # decides how many generations (runs) have to be completed
+    max_n = 100  # maximus number of fibers, decides how many domains should be generated for each "sample"
 
     while s < samples:
         n = 10
@@ -70,6 +70,7 @@ def main():
         while n <= max_n: # loop over the different domain with increasing number of fibers
             logger.info("------------------------------------------------------------")
             logger.info("RVE with %s fibers", n)
+            logger.info("RVE with side: %s ", side)
             moduli = []  # clean list used for mesh convergence validation
             
             x_centers, y_centers = mesh.get_fiber_centers(rand_gen, radius, n, side, min_distance, offset, max_iter, x_centers, y_centers, old_side)
@@ -95,7 +96,7 @@ def main():
                 )
                 num_nodes = mesh_obj.points.shape[0]
                 # run FEM simulation
-                E2 = analysis(mesh_obj, element_type)
+                E2 = analysis(mesh_obj, element_type, post_process=False, vtk_filename=filename)
 
                 if m == 0:  # first mesh
                     moduli.append(E2) # store the value obtained for mesh convergence validation
