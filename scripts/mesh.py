@@ -1,21 +1,90 @@
-import sys
-import math
-from pathlib import Path
 import logging
+import math
+import sys
 
-import meshio
 import numpy as np
 import pygmsh
-
 
 logger = logging.getLogger(__name__)
 
 
-def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_iter, x_list, y_list, old_side):
+def center_in_box(x, y, vertex, side):
+    return (
+        vertex[0] < x < vertex[0] + side
+    ) and (
+        vertex[1] < y < vertex[1] + side
+    )
+
+
+def circle_insersect_side(x, y, radius, x1, y1, x2, y2):
+    """Weisstein, Eric W. "Circle-Line Intersection."
+    From MathWorld--A Wolfram Web Resource.
+    https://mathworld.wolfram.com/Circle-LineIntersection.html
+    """
+    X1 = x1 - x; Y1 = y1 - y
+    X2 = x2 - x; Y2 = y2 - y
+
+    dx = X2-X1; dy = Y2-Y1
+    dr = math.sqrt(dx**2 + dy**2)
+    D = X1*Y2 - X2*Y1
+    delta = radius**2 * dr**2 - D**2
+
+    if delta > 0:
+        # first intersection point
+        Xa = (D*dy + math.copysign(dx,dy)*math.sqrt(delta)) / (dr**2)
+        Ya = (-D*dx + abs(dy)*math.sqrt(delta)) / (dr**2)
+        # second intersection point
+        Xb = (D*dy - math.copysign(dx,dy)*math.sqrt(delta)) / (dr**2)
+        Yb = (-D*dx - abs(dy)*math.sqrt(delta)) / (dr**2)
+
+        Xa_collide = (min(X1,X2) <= Xa <= max(X1,X2))
+        Ya_collide = (min(Y1,Y2) <= Ya <= max(Y1,Y2))
+        
+        Xb_collide = (min(X1,X2) <= Xb <= max(X1,X2))
+        Yb_collide = (min(Y1,Y2) <= Yb <= max(Y1,Y2))
+
+        return (Xa_collide and Ya_collide) or (Xb_collide and Yb_collide)
+
+    else:  # delta <= 0 are considered not colliding
+        return False
+
+
+def circle_intersect_box(x, y, radius, vertex, side):
+    # 1st check center of circle is inside the box?
+    check1 = center_in_box(x, y, vertex, side)
+    # logger.debug("check1: %s", check1)
+
+    if check1:
+        return True
+
+    # 2nd check: the circle and each side of the box have intersection?
+    x1 = vertex[0]; y1 = vertex[1]; x2 = vertex[0]+side; y2 = vertex[1]
+    side1 = circle_insersect_side(x, y, radius, x1, y1, x2, y2)
+    # logger.debug("side1 intersect: %s", side1)
+    
+    x1 = vertex[0]+side; y1 = vertex[1]; x2 = vertex[0]+side; y2 = vertex[1]+side
+    side2 = circle_insersect_side(x, y, radius, x1, y1, x2, y2)
+    # logger.debug("side2 intersect: %s", side2)
+    
+    x1 = vertex[0]+side; y1 = vertex[1]+side; x2 = vertex[0]; y2 = vertex[1]+side
+    side3 = circle_insersect_side(x, y, radius, x1, y1, x2, y2)
+    # logger.debug("side3 intersect: %s", side3)
+    
+    x1 = vertex[0]; y1 = vertex[1]+side; x2 = vertex[0]; y2 = vertex[1]
+    side4 = circle_insersect_side(x, y, radius, x1, y1, x2, y2)
+    # logger.debug("side4 intersect: %s", side4)
+
+    check2 = (side1 or side2 or side3 or side4)  # circle intersect one of ths sides?
+    # logger.debug("check2: %s", check2)
+
+    return (check1 or check2)
+
+
+def get_fiber_centers(rand_gen, number, side, min_distance, offset, max_iter, centers):
    
     get_dist = lambda x_0, y_0, x_1, y_1: math.sqrt((x_0 - x_1)**2 + (y_0 - y_1)**2)
 
-    i = len(x_list)  # counter for array indexing
+    i = 0  # = 0 | counter for array indexing
     k = 0  # iterations counter
 
     while k < max_iter:
@@ -24,28 +93,20 @@ def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_
         x = offset + (side - 2*offset)* rand_gen.random()
         y = offset + (side - 2*offset)* rand_gen.random()
 
-        # check center outside old domain
-        if old_side is not None:
-            # if (x < old_side + radius) and (y < old_side + radius):
-            if (x < old_side) and (y < old_side):
-                # logger.debug("skip current (x,y)")
-                continue
-        # logger.debug("checking superposition...")
-
         # check superposition with other fibers
-        for j in range(i):
-            distance = get_dist(x, y, x_list[j], y_list[j])
-            if distance > min_distance:
-                valid = True
-            else:
-                valid = False
-                break  # exit the loop when the first intersection is found
+        if centers:  # skip if center = []
+            for j in range(len(centers)):
+                distance = get_dist(x, y, centers[j][0], centers[j][1])
+                if distance > min_distance:
+                    valid = True
+                else:
+                    valid = False
+                    break  # exit the loop when the first intersection is found
 
         if valid:  # if no intersection is found center coordinates are added to arrays
-            x_list.append(x)
-            y_list.append(y)
             i += 1
-        
+            centers.append([x, y, 0.0])
+
         if i == number:
             break
 
@@ -53,74 +114,92 @@ def get_fiber_centers(rand_gen, radius, number, side, min_distance, offset, max_
         logger.warning("Fiber centers not found!!! exit...")
         sys.exit()
 
-    return x_list, y_list
+    return centers
 
 
-def create_mesh(geo_path, msh_path, radius, number, side, x_list, y_list, coarse_cl, fine_cl):
+def filter_centers(centers, radius, vertex, side):  # TODO use closure for this
+    filtered = []
+    for c in centers:
+        check = circle_intersect_box(c[0], c[1], radius, vertex, side)
+        if check:
+            filtered.append(c)  # this is valid 'cause centers have to be uniques
+    return filtered
+
+
+def create_mesh(geo_path, msh_path, radius, vertex, side, centers, coarse_cl, fine_cl):
+
+    geom = pygmsh.opencascade.Geometry()
+
+    disks = []
+    for i in range(len(centers)):
+        fiber = geom.add_disk(centers[i], radius)
+        disks.append(fiber)
     
-    geom = pygmsh.built_in.Geometry()
+    disk_tags = ", ".join([d.id for d in disks])
 
-    # RVE square geometry
-    p0 = geom.add_point([0.0, 0.0, 0.0], coarse_cl)
-    p1 = geom.add_point([side, 0.0, 0.0], coarse_cl)
-    p2 = geom.add_point([side, side, 0.0], coarse_cl)
-    p3 = geom.add_point([0.0, side, 0.0], coarse_cl)
-    
-    l0 = geom.add_line(p0, p1)
-    l1 = geom.add_line(p1, p2)
-    l2 = geom.add_line(p2, p3)
-    l3 = geom.add_line(p3, p0)
-    square_loop = geom.add_line_loop([l0, l1, l2, l3])
+    rectangle = geom.add_rectangle(vertex, side, side)
 
-    # Fibers geometry
-    circle_arcs = []  # list of circle arcs that form fibers
-    circle_loops = []  # list of gmsh line loops for fibers
-    fiber_surfaces = []  # list of gmsh surfaces related to fibers
+    geom.add_raw_code(
+        f"BooleanIntersection{{ Surface{{{disk_tags}}}; Delete; }} "
+        f"{{ Surface{{{rectangle.id}}}; }}"
+    )
+    geom.add_raw_code(
+        f"t[] = BooleanDifference{{ Surface{{{rectangle.id}}}; Delete; }} "  # saving t[] list for fixing fragment problem
+        f"{{ Surface{{{disk_tags}}}; }};"
+    )
 
-    for n in range(number):
-        center = geom.add_point([x_list[n], y_list[n], 0], coarse_cl)
-        circle = geom.add_circle([x_list[n], y_list[n], 0], radius, lcar=coarse_cl)
-        circle_loops.append(circle.line_loop)
-        geom.add_raw_code(f"Point{{{center.id}}} In Surface{{{circle.plane_surface.id}}};")
-        fiber_surfaces.append(circle.plane_surface)
-        arcs = [line.id for line in circle.line_loop.lines]
-        circle_arcs.extend(arcs)
+    e = 0.01
+    geom.add_raw_code(
+        f"p() = Point In BoundingBox"
+        f"{{{vertex[0]-e}, {vertex[1]-e}, {vertex[2]-e}, {vertex[0]+e}, {vertex[1]+e}, {vertex[2]+e}}};"  # bottom left corner
+    )
+    geom.add_raw_code(
+        f"q() = Curve In BoundingBox"
+        f"{{{vertex[0]-e}, {vertex[1]-e}, {vertex[2]-e}, {vertex[0]+e}, {vertex[1]+side+e}, {vertex[2]+e}}};"  # left side
+    )
+    geom.add_raw_code(
+        f"r() = Curve In BoundingBox"
+        f"{{{vertex[0]+side-e}, {vertex[1]-e}, {vertex[2]-e}, {vertex[0]+side+e}, {vertex[1]+side+e}, {vertex[2]+e}}};"  # right side
+    )
 
-    square_surface = geom.add_plane_surface(square_loop, holes=circle_loops)  # create matrix surface subtracting circles from square geometry
+    geom.add_raw_code(
+        f"boundary[] = Boundary{{ Surface{{{disk_tags}}}; }};"  # identify boundaries of fibers for mesh refinement
+    )
 
-    # Mesh size Fields (http://gmsh.info/doc/texinfo/gmsh.html#Specifying-mesh-element-sizes)
     geom.add_raw_code("Field[1] = Distance;")
     geom.add_raw_code("Field[1].NNodesByEdge = 100;")
-    geom.add_raw_code("Field[1].EdgesList = {{{}}};".format(", ".join(circle_arcs)))
-    geom.add_raw_code("Field[2] = Threshold;\n"
+    geom.add_raw_code(f"Field[1].EdgesList = {{boundary[]}};")
+    geom.add_raw_code(
+        "Field[2] = Threshold;\n"
         "Field[2].IField = 1;\n"
         f"Field[2].LcMin = {fine_cl};\n"
         f"Field[2].LcMax = {coarse_cl};\n"
         "Field[2].DistMin = 0.01;\n"
-        f"Field[2].DistMax = {radius};\n"  # FIXME test this
-        "Background Field = 2;\n"
+        f"Field[2].DistMax = {radius};\n"
+        "Background Field = 2;"
     )
-    geom.add_raw_code("Mesh.CharacteristicLengthExtendFromBoundary = 0;\n"
+    geom.add_raw_code(
+        "Mesh.CharacteristicLengthExtendFromBoundary = 0;\n"
         "Mesh.CharacteristicLengthFromPoints = 0;\n"
-        "Mesh.CharacteristicLengthFromCurvature = 0;\n"
+        "Mesh.CharacteristicLengthFromCurvature = 0;"
     )
 
-    # Physical groups
-    geom.add_physical(square_surface, label="matrix")
-    geom.add_physical(fiber_surfaces, label="fiber")
-    geom.add_physical(l3, label="left side")  # constrained left side
-    geom.add_physical(p0, label="bottom left corner")  # fixed corner
-    geom.add_physical(l1, label="right side")  # imposed displacement right side
-
-    # Gmsh .msh file generation
+    geom.add_raw_code(
+        f"Physical Surface(\"matrix\") = {{t[]}};\n"
+        f"Physical Surface(\"fiber\") = {{{disk_tags}}};\n"
+        f"Physical Point(\"bottom left corner\") = {{p()}};\n"
+        f"Physical Curve(\"left side\") = {{q()}};\n"
+        f"Physical Curve(\"right side\") = {{r()}};\n"
+    )
+    
     mesh = pygmsh.generate_mesh(
         geom,
-        # geo_filename=str(geo_path),  # uncomment this for saving geo and msh
-        # msh_filename=str(msh_path),
+        geo_filename=str(geo_path),  # uncomment this for saving geo and msh
+        msh_filename=str(msh_path),
         verbose=False,
         dim=2,
     )
-    return mesh  # returning meshio Mesh object for further needs
+    return mesh
 
 
 if __name__ == "__main__":
@@ -134,44 +213,51 @@ if __name__ == "__main__":
     handler.setFormatter(formatter)
     root_logger.addHandler(handler)
 
-    geo_path = "../data/geo/refined_2.geo"
-    msh_path = "../data/reboot/validation.msh"
-    max_iter = 100000
+    geo_path = "../data/geo/auto_cake.geo"
+    msh_path = "../data/msh/auto_cake.msh"
+    max_iter = 1000000
 
     # RVE logic
-    Vf = 0.30  # fiber volume fraction
+    Vf = 0.30 # fiber volume fraction
     radius = 1.0
-    number = 10
-    side = math.sqrt(math.pi * radius**2 * number / Vf)
-    print("rve side = ", side)
     min_distance = 2.1 * radius
     offset = 1.1 * radius
-    coarse_cl = 0.5
+    coarse_cl = 0.25
     fine_cl = coarse_cl / 2
 
-    rg = np.random.default_rng(19)  # random generator, accept seed as arg (reproducibility)
+    
+    max_number = 20
+    max_side = math.sqrt(math.pi * radius**2 * max_number / Vf)
+    num_steps = 4 # number of steps from the
+    side_step = max_side / (num_steps*2)
+    root_logger.info("max_side: %s", max_side)
+    root_logger.info("side_step: %s", side_step)
+    
+    rg = np.random.default_rng(96)  # random generator, accept seed as arg (reproducibility)
+    centers = []
+    centers = get_fiber_centers(rg, max_number, max_side, min_distance, offset, max_iter, centers)
+    root_logger.info("centers: %s", centers)
+    root_logger.info("len centers: %s", len(centers))
 
-    x_list = [
-        4.477015140636965, 3.300070757836716, 7.373705098213486, 4.391170095684478,
-        5.465886648631734, 2.446386464460651, 1.2239329865870123, 8.586118632630855,
-        8.973020999749487, 1.4037057884961852
-    ]
-    y_list = [
-        8.537755727601748, 1.582386474665313, 5.427519658891324, 6.026362684282338,
-        1.9917791185075826, 7.664701411635054, 5.76315679939553, 2.851615342928181,
-        9.055487089785053, 2.581815590004845
-    ]
-    x_list, y_list = get_fiber_centers(rg, radius, number, side, min_distance, offset, max_iter, x_list, y_list)
-    root_logger.debug(x_list)
-    root_logger.debug(y_list)
+
+    s = 0
+    r = num_steps - 1 - s  # reversing succession, from small to large RVE
+    box_vertex = [r*side_step, r*side_step, 0.0]
+    box_side = max_side - (r*2*side_step)
+
+    root_logger.info("actual vertex: %s", box_vertex)
+    root_logger.info("actual side: %s", box_side)
+
+    centers = filter_centers(centers, radius, box_vertex, box_side)
+    root_logger.info("len filtered centers: %s", len(centers))
+
     mesh = create_mesh(
         geo_path,
         msh_path,
         radius,
-        number,
-        side,
-        x_list,
-        y_list,
+        box_vertex,
+        box_side,
+        centers,
         coarse_cl,
         fine_cl
     )

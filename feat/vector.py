@@ -131,8 +131,8 @@ def assembly(num_elements, num_nodes, elements, nodal_coord, E_array, thickness)
         [Y(c,e,1,2), Y(c,e,2,0), Y(c,e,0,1)],
         [X(c,e,2,1), X(c,e,0,2), X(c,e,1,0)],
     ])
-    logger.debug("b shape: %s", b.shape)
-    logger.debug("b bytes: %s", b.nbytes)
+    # logger.debug("b shape: %s", b.shape)
+    # logger.debug("b bytes: %s", b.nbytes)
 
     K = sparse.csc_matrix((2 * num_nodes, 2 * num_nodes))
     

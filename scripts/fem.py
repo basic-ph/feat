@@ -150,7 +150,7 @@ def vector_analysis(mesh, element_type, post_process=False, vtk_filename=None):
         D_ready = np.column_stack((D[::2], D[1::2], np.zeros(num_nodes)))
         D_dict = {"displacement": D_ready}
         mesh.point_data = D_dict
-        mesh.write(f"../data/vtk/{vtk_filename}.vtk")
+        mesh.write(f"../data/happy/{vtk_filename}.vtk")
         logger.debug("VTK file created")
 
     return modulus
