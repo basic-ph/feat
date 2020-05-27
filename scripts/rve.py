@@ -49,16 +49,16 @@ def main():
     fine_cls = [cl / 2 for cl in coarse_cls]  # fine element dimension (matrix-fiber boundary)
     element_type = "triangle"
 
-    max_number = 50
+    max_number = 100
     max_side = math.sqrt(math.pi * radius**2 * max_number / Vf)
     logger.info("-------- RVE ANALYSIS --------")
     logger.info("max number: %s - max side: %s", max_number, max_side)
 
-    num_steps = 3 # number of steps from the
+    num_steps = 8 # number of steps from the
     side_step = max_side / (num_steps*2)  # distance between box vertices of different RVE
 
     seeds = [96, 11, 50, 46, 88, 53, 89, 15, 33, 49]  # [96, 11, 50, 46, 88, 53, 89, 15, 33, 49]
-    num_samples  = 1  # can't exceed seeds lenght
+    num_samples  = 3  # can't exceed seeds lenght
     data = []  # list of [s: id del sample, n: numero di fibre nel dominiio, coarse_cl, side, num_nodes, E2, {0|1}]
 
     for p in range(num_samples):

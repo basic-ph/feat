@@ -9,3 +9,4 @@ dependencies:
   - conda-forge::tuna
   - conda-forge::meshio
   - conda-forge::matplotlib
+  - pdiercks::pygmsh
