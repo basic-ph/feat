@@ -10,7 +10,7 @@ from statistics import mean, stdev
 import numpy as np
 
 import fem
-import mesh
+from feat import mesh
 
 
 def main():
@@ -45,11 +45,11 @@ def main():
     min_distance = 2.1 * radius
     offset = 1.1 * radius
     max_iter = 100000
-    coarse_cls = [0.25, 0.12, 0.06]  #  [1.0, 0.5, 0.25, 0.12, 0.06] coarse element dimension (far from matrix-fiber boundary)
+    coarse_cls = [0.5, 0.25, 0.12, 0.06]  #  [1.0, 0.5, 0.25, 0.12, 0.06] coarse element dimension (far from matrix-fiber boundary)
     fine_cls = [cl / 2 for cl in coarse_cls]  # fine element dimension (matrix-fiber boundary)
     element_type = "triangle"
 
-    max_number = 200
+    max_number = 50
     max_side = math.sqrt(math.pi * radius**2 * max_number / Vf)
     logger.info("-------- RVE ANALYSIS --------")
     logger.info("max number: %s - max side: %s", max_number, max_side)
@@ -58,7 +58,7 @@ def main():
     side_step = max_side / (num_steps*2)  # distance between box vertices of different RVE
 
     seeds = [96, 11, 50, 46, 88, 53, 89, 15, 33, 49]  # [96, 11, 50, 46, 88, 53, 89, 15, 33, 49]
-    num_samples  = 3  # can't exceed seeds lenght
+    num_samples  = 1  # can't exceed seeds lenght
     data = []  # list of [s: id del sample, n: numero di fibre nel dominiio, coarse_cl, side, num_nodes, E2, {0|1}]
 
     for p in range(num_samples):
@@ -66,7 +66,7 @@ def main():
         centers = []
         centers = mesh.get_fiber_centers(rand_gen, max_number, max_side, min_distance, offset, max_iter, centers)
         logger.info("SAMPLE #%s - computed %s centers using %s as seed.", p, len(centers), seeds[p])
-        logger.debug("centers:\n%s", centers)
+        # logger.debug("centers:\n%s", centers)
 
         for s in range(num_steps):
             r = num_steps - 1 - s  # reversing succession, from small to large RVE
@@ -76,7 +76,7 @@ def main():
             moduli = []  # clean list used for mesh convergence validation
             logger.info("STEP #%s - vertex: %s - side: %s", s, box_vertex, box_side)
             logger.info("num filtered centers: %s", len(filtered_centers))
-            logger.info("filtered centers:\n%s", filtered_centers)
+            # logger.info("filtered centers:\n%s", fkiltered_centers)
 
             for m in range(len(coarse_cls)):
                 filename = f"rve-{p}-{s}-{m}"
@@ -101,17 +101,17 @@ def main():
                 
                 if m == 0:  # first mesh
                     moduli.append(E2) # store the value obtained for mesh convergence validation
-                    data.append([p, s, coarse_cl, box_side, num_nodes, E2, 0])  # 0 means non-converged result
+                    data.append([p, s, m, box_side, num_nodes, E2, 0])  # 0 means non-converged result
                 else:
                     moduli.append(E2)
                     prev_E2 = moduli[m-1]
                     rel_diff = abs(E2 - prev_E2) / prev_E2  # difference relative to precedent obtained estimate
-                    if rel_diff < 0.001:
-                        data.append([p, s, coarse_cl, box_side, num_nodes, E2, 1])  # 1 means converged result
+                    if rel_diff < 0.01:
+                        data.append([p, s, m, box_side, num_nodes, E2, 1])  # 1 means converged result
                         logger.info("Mesh #%s converged!", m)
                         break  # mesh convergence obtained, continue with the next random realization
                     else:
-                        data.append([p, s, coarse_cl, box_side, num_nodes, E2, 0])  # 0 means non-converged result
+                        data.append([p, s, m, box_side, num_nodes, E2, 0])  # 0 means non-converged result
                         logger.info("Mesh #%s NOT converged!", m)
 
 

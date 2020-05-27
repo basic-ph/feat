@@ -23,26 +23,35 @@ def circle_insersect_side(x, y, radius, x1, y1, x2, y2):
     """
     X1 = x1 - x; Y1 = y1 - y
     X2 = x2 - x; Y2 = y2 - y
+    print("X1,Y1", X1, Y1)
+    print("X2,Y2", X2, Y2)
 
     dx = X2-X1; dy = Y2-Y1
     dr = math.sqrt(dx**2 + dy**2)
     D = X1*Y2 - X2*Y1
     delta = radius**2 * dr**2 - D**2
+    print(delta)
 
     if delta > 0:
         # first intersection point
         Xa = (D*dy + math.copysign(dx,dy)*math.sqrt(delta)) / (dr**2)
         Ya = (-D*dx + abs(dy)*math.sqrt(delta)) / (dr**2)
+        print("Xa,Ya", Xa,Ya)
         # second intersection point
         Xb = (D*dy - math.copysign(dx,dy)*math.sqrt(delta)) / (dr**2)
         Yb = (-D*dx - abs(dy)*math.sqrt(delta)) / (dr**2)
+        print("Xb,Yb", Xb,Yb)
 
-        Xa_collide = (min(X1,X2) <= Xa <= max(X1,X2))
-        Ya_collide = (min(Y1,Y2) <= Ya <= max(Y1,Y2))
+        tol = 1e-9
+        Xa_collide = (min(X1,X2)-tol <= Xa <= max(X1,X2)+tol)
+        Ya_collide = (min(Y1,Y2)-tol <= Ya <= max(Y1,Y2)+tol)
+        print("Xa_collide", Xa_collide)
+        print("Ya_collide", Ya_collide)
         
-        Xb_collide = (min(X1,X2) <= Xb <= max(X1,X2))
-        Yb_collide = (min(Y1,Y2) <= Yb <= max(Y1,Y2))
-
+        Xb_collide = (min(X1,X2)-tol <= Xb <= max(X1,X2)+tol)
+        Yb_collide = (min(Y1,Y2)-tol <= Yb <= max(Y1,Y2)+tol)
+        print("Xb_collide", Xb_collide)
+        print("Yb_collide", Yb_collide)
         return (Xa_collide and Ya_collide) or (Xb_collide and Yb_collide)
 
     else:  # delta <= 0 are considered not colliding
@@ -196,68 +205,7 @@ def create_mesh(geo_path, msh_path, radius, vertex, side, centers, coarse_cl, fi
         geom,
         geo_filename=str(geo_path),  # uncomment this for saving geo and msh
         msh_filename=str(msh_path),
-        verbose=False,
+        verbose=True,
         dim=2,
     )
     return mesh
-
-
-if __name__ == "__main__":
-    # logger
-    log_lvl = logging.DEBUG
-    root_logger = logging.getLogger()
-    root_logger.setLevel(log_lvl)
-    handler = logging.StreamHandler()
-    handler.setLevel(log_lvl)
-    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    handler.setFormatter(formatter)
-    root_logger.addHandler(handler)
-
-    geo_path = "../data/geo/auto_cake.geo"
-    msh_path = "../data/msh/auto_cake.msh"
-    max_iter = 1000000
-
-    # RVE logic
-    Vf = 0.30 # fiber volume fraction
-    radius = 1.0
-    min_distance = 2.1 * radius
-    offset = 1.1 * radius
-    coarse_cl = 0.25
-    fine_cl = coarse_cl / 2
-
-    
-    max_number = 20
-    max_side = math.sqrt(math.pi * radius**2 * max_number / Vf)
-    num_steps = 4 # number of steps from the
-    side_step = max_side / (num_steps*2)
-    root_logger.info("max_side: %s", max_side)
-    root_logger.info("side_step: %s", side_step)
-    
-    rg = np.random.default_rng(96)  # random generator, accept seed as arg (reproducibility)
-    centers = []
-    centers = get_fiber_centers(rg, max_number, max_side, min_distance, offset, max_iter, centers)
-    root_logger.info("centers: %s", centers)
-    root_logger.info("len centers: %s", len(centers))
-
-
-    s = 0
-    r = num_steps - 1 - s  # reversing succession, from small to large RVE
-    box_vertex = [r*side_step, r*side_step, 0.0]
-    box_side = max_side - (r*2*side_step)
-
-    root_logger.info("actual vertex: %s", box_vertex)
-    root_logger.info("actual side: %s", box_side)
-
-    centers = filter_centers(centers, radius, box_vertex, box_side)
-    root_logger.info("len filtered centers: %s", len(centers))
-
-    mesh = create_mesh(
-        geo_path,
-        msh_path,
-        radius,
-        box_vertex,
-        box_side,
-        centers,
-        coarse_cl,
-        fine_cl
-    )
