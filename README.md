@@ -31,6 +31,14 @@ from: [snakeviz docs](https://jiffyclub.github.io/snakeviz/#generating-profiles)
 python -m cProfile -o program.prof my_program.py
 ```
 
+## memory-profiler
+commands:
+    - `mprof run`: running an executable, recording memory usage
+    - `mprof plot`: plotting one the recorded memory usage (by default, the last one)
+    - `mprof list`: listing all recorded memory usage files in a user-friendly way.
+    - `mprof clean`: removing all recorded memory usage files.
+    - `mprof rm`: removing specific recorded memory usage files
+
 ## ~~GMSH python API~~
 from:
 https://gitlab.onelab.info/gmsh/gmsh/blob/master/demos/api/README.txt#L19  

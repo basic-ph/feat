@@ -1,9 +1,11 @@
 import argparse
 import csv
 import math
+import statistics
 
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib as mpl
 
 
 def main():
@@ -34,38 +36,66 @@ def main():
     
     data = [item for item in data if item[6] == 1.0]  # select only converged values (last value = 1)
     samples = int(data[-1][0] + 1)  # infers the number of samples from the last entry
-    steps = [item[3] for item in data if item[0] == data[-1][0]]  # different-sized domanis computed for each sample
-    print(data)
-    print(samples)
-    print(steps)
+    steps = [item[3] for item in data if item[0] == data[-1][0]]  # side of different-sized domanis computed for each sample
 
+    mpl.style.use("seaborn")
+    plt.rcParams.update({
+    "font.family": "serif",  # use serif/main font for text elements
+    # "text.usetex": True,     # use inline math for ticks
+    # "pgf.rcfonts": False     # don't setup fonts from rc parameters
+    })
     fig, ax = plt.subplots()
     for s in range(samples):
         side_data = [item[3] for item in data if item[0] == float(s)]
         E2_data = [item[5] for item in data if item[0] == float(s)]
         ax.plot(side_data, E2_data, "--", label=f"sample {s+1}")
     
-    max_data = []
-    min_data = []
-    for n in steps:
-        E2_data = [item[5] for item in data if item[3] == n]
-        E2_max = max(E2_data)
-        E2_min = min(E2_data)
-        max_data.append(E2_max)
-        min_data.append(E2_min)
+    # last E2 for each sample, should be the best estimate
+    # best_data_side = [steps[-1] for i in range(samples)]
+    best_data = [item[5] for item in data if item[1] == len(steps)-1]
+    # ax.plot(best_data_side, best_data, "ok", markersize="3")
+    print(best_data)
+    mean = statistics.mean(best_data)
+    sigma = statistics.stdev(best_data)
+    
+    textstr = (
+        f"$\\overline{{E}}_2$ = {mean:.2f} GPa\n"
+        f"$\sigma$ = {sigma:.2f} Gpa"
+    )
+    ax.text(
+        0.7,
+        0.6,
+        textstr,
+        transform=ax.transAxes,
+        fontsize=12,
+        verticalalignment='top',
+        bbox=dict(facecolor='w')  # boxstyle='round', alpha=0.5
+    )
 
-    ax.fill_between(steps, max_data, min_data, alpha=0.3)
+
+    # Fill area between max and min
+    # max_data = []
+    # min_data = []
+    # for n in steps:
+    #     E2_data = [item[5] for item in data if item[3] == n]
+    #     E2_max = max(E2_data)
+    #     E2_min = min(E2_data)
+    #     # max_data.append(E2_max)
+        # min_data.append(E2_min)
+
+    # ax.fill_between(steps, max_data, min_data, alpha=0.3)
     # ax.plot(steps, max_data, ".")
     # ax.plot(steps, min_data, ".")
     
     ax.set(
         xlabel='RVE size (side of the square box)',
         ylabel='$E_2$ [GPa]',
-        title='RVE Convergence'
+        # title='RVE Convergence'
     )
-    ax.grid()
-    fig.legend()
+    # ax.grid()
+    fig.legend(loc='upper right', bbox_to_anchor=(0.95, 0.95))
 
+    fig.tight_layout()
     plt.show()
 
 if __name__ == "__main__":

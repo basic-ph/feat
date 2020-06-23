@@ -194,8 +194,8 @@ def create_mesh(geo_path, msh_path, radius, vertex, side, centers, coarse_cl, fi
     
     mesh = pygmsh.generate_mesh(
         geom,
-        geo_filename=str(geo_path),  # uncomment this for saving geo and msh
-        msh_filename=str(msh_path),
+        # geo_filename=str(geo_path),  # uncomment this for saving geo and msh
+        # msh_filename=str(msh_path),
         verbose=False,
         dim=2,
     )

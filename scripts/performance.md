@@ -9,6 +9,24 @@ perf 100 | 35327 | -- | 4.581058979034424 | 1.6824288368225098 |
 perf 400 | 141282 | -- | 19.046363592147827 | 7.945904970169067 |
 perf 1600 | 565549 | -- | 82.52184128761292 | 40.08019495010376 |
 
+
+## 2020-06-17
+perf 25 | base | 22.343284845352173  
+perf 50 | base | 184.2389760017395  
+
+perf 25 | sparse | 1.0877270698547363  
+perf 50 | sparse | 2.205213785171509  
+perf 100 | sparse | 4.466970205307007  
+perf 400 | sparse | 19.1698796749115  
+perf 1600 | sparse | 83.22076272964478  
+
+perf 25 | vector | 0.25047993659973145  
+perf 50 | vector | 0.5708961486816406  
+perf 100 | vector | 1.258349895477295  
+perf 400 | vector | 5.730280876159668  
+perf 1600 | vector | 29.83337163925171  
+
+
 # cProfile performance test
 perf_50 mesh for every variant.
  - perf_50_base.prof
@@ -30,3 +48,10 @@ Data summarized:
     - assembly                          0.399 s
     - sparse.linalg.spsolve             0.258 s
     - sp_apply_dirichlet                0.034 s
+
+
+RVE analysis
+- 500 fibre, 10 samples, 10 steps, seeds = [44, 5, 34, 58, 11, 16, 91, 77, 84, 11]
+  tempo = 5797.039974927902 s = 96.617' ~ 1h36'
+- 500 fibre, 5 samples, 10 steps, seeds = [24, 21, 65, 22, 35]
+  tempo = 
