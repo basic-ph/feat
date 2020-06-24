@@ -110,9 +110,9 @@ def assembly(K, num_elem, elem, coord, mat_map, E_mat, h, elem_type):
     for e in range(num_elem):
         k = stiffness_matrix(e, elem, coord, mat_map, E_mat, h, elem_type)
         element_dof = compute_global_dof(e, elem, elem_type)
-        for i in range(6):  # becomes 12 for T6
+        for i in range(2 * elem[0].shape[0]):  # range(6)
             I = element_dof[i]
-            for j in range(6):  # becomes 12 for T6
+            for j in range(2 * elem[0].shape[0]):  # range(6)
                 J = element_dof[j]
                 K[I, J] += k[i, j]
     return K
