@@ -33,7 +33,6 @@ def test_stiffness_matrix():
     mesh_path = "tests/data/msh/test.msh"
 
     element_type = "triangle"
-    integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
     steel = base.Material("steel", 3e7, 0.25, load_condition)
@@ -46,8 +45,8 @@ def test_stiffness_matrix():
     material_map = mesh.cell_data_dict["gmsh:physical"][element_type] - 1  # element-material map
     E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, steel)
 
-    k_0 = base.stiffness_matrix(0, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
-    k_1 = base.stiffness_matrix(1, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
+    k_0 = base.stiffness_matrix(0, elements, nodal_coord, material_map, E_material, thickness, element_type)
+    k_1 = base.stiffness_matrix(1, elements, nodal_coord, material_map, E_material, thickness, element_type)
 
     k_0_true = np.array([
         (5333333.33333333, 0.0, -5333333.33333333, 2000000., 0., -2000000.),
@@ -74,7 +73,6 @@ def test_fem():
     mesh_path = "tests/data/msh/test.msh"
 
     element_type = "triangle"
-    integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
     steel = base.Material("steel", 3e7, 0.25, load_condition)
@@ -93,7 +91,7 @@ def test_fem():
     E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, steel)
     K = np.zeros((num_nodes * 2, num_nodes * 2))
     R = np.zeros(num_nodes * 2)
-    K = base.assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
+    K = base.assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type)
 
     K, R = bc.apply_dirichlet(K, R, left_side, br_corner)
     R = bc.apply_neumann(R, tr_corner)
@@ -113,7 +111,6 @@ def test_sparse_fem():
     mesh_path = "tests/data/msh/test.msh"
 
     element_type = "triangle"
-    integration_points = 1
     load_condition = "plane stress"  # "plane stress" or "plane strain"
     thickness = 0.5
     steel = base.Material("steel", 3e7, 0.25, load_condition)
@@ -134,7 +131,7 @@ def test_sparse_fem():
     R = np.zeros(num_nodes * 2)
     # for e in range(num_elements):
     #     K = base.sparse_assembly(K, e, mesh, E_material, thickness, element_type, integration_points)
-    K = base.sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
+    K = base.sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map, E_material, thickness, element_type)
 
     print(K)
     K, R = bc.sp_apply_dirichlet(num_nodes, K, R, left_side, br_corner)

@@ -26,7 +26,7 @@ class Material():
             self.E_full = coeff * matrix  # 2D array: constitutive matrix (3x3)
 
             # E_flat: constitutive matrix for vectorized implementation
-            # the original 3-by-3 matrix is reduced to saving 6 elements (diag+triu) in 1D array
+            # the original 3-by-3 matrix is reduced to saving 6 elem (diag+triu) in 1D array
             self.E_flat = np.array([
                 self.young * (1 - self.poisson) / ((1 + self.poisson) * (1 - 2*self.poisson)),
                 self.young * self.poisson / ((1 + self.poisson) * (1 - 2*self.poisson)),
@@ -57,68 +57,31 @@ class Material():
 
 def compute_E_material(num_elements, material_map, field_data, *materials):
     num_materials = len(materials)
-    E_material = np.zeros((num_materials,3,3)) # 3D array composed by E matrix for each material
+    E_mat = np.zeros((num_materials,3,3)) # 3D array composed by E matrix for each material
 
     for m in materials:
         tag = field_data[m.name][0] - 1   # convert to zero offset from unit offset (gmsh)
         # array containing constitutive matrices for each material in mesh
-        E_material[tag,:,:] = m.E_full
+        E_mat[tag,:,:] = m.E_full
 
-    return E_material
-
-
-def gauss_quadrature(element_type, integration_points):
-    if element_type == "triangle":
-        if integration_points == 1:
-            weights = np.array([1])
-            locations = np.array([(1/3, 1/3)])
-        elif integration_points == 3:  # only bulk rule
-            weights = np.array([1/3, 1/3, 1/3])
-            locations = np.array(
-                [
-                    (1/6, 1/6),
-                    (2/3, 1/6),
-                    (1/6, 2/3),
-                ]
-            )
-    elif element_type == "triangle6":
-        if integration_points == 3:
-            weights = np.array([1/3, 1/3, 1/3])
-            locations = np.array([
-                [2/3, 1/6, 1/6],
-                [1/6, 2/3, 1/6],
-                [1/6, 1/6, 2/3],
-            ])
-            # locations = np.array([
-            #     [1/2, 1/2, 0.0],
-            #     [0.0, 1/2, 1/2],
-            #     [1/2, 0.0, 1/2],
-            # ])
-        else:
-            print("ERROR -- for T6 only 3 point rule is supported!!!")
-            sys.exit()
-    return weights, locations
+    return E_mat
 
 
 x = lambda a, i, j: a[i][0] - a[j][0]
 y = lambda b, i, j: b[i][1] - b[j][1]
 
 
-def stiffness_matrix(e, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points):
-    t = thickness
-    element = elements[e]
-    c = nodal_coord[element]  # indexing with an array
+def stiffness_matrix(e, elem, coord, mat_map, E_mat, h, elem_type):
+    t = h
+    element = elem[e]
+    c = coord[element]  # indexing with an array
 
-    material_tag = material_map[e]
-    E = E_material[material_tag]
+    material_tag = mat_map[e]
+    E = E_mat[material_tag]
 
     # element/local stiffness matrix
     k = np.zeros((2*element.shape[0], 2*element.shape[0]))  # for T6 --> 12 by 12
 
-    weights, locations = gauss_quadrature(element_type, integration_points)
-    # print(weights)
-    # print(locations)
-    w = weights[0]
     j = ( (c[1][0] - c[0][0]) * (c[2][1] - c[0][1])  # det of jacobian matrix
         - (c[2][0] - c[0][0]) * (c[1][1] - c[0][1])
     )
@@ -133,8 +96,8 @@ def stiffness_matrix(e, elements, nodal_coord, material_map, E_material, thickne
     return k
 
 
-def compute_global_dof(e, elements, element_type):
-    element = elements[e]
+def compute_global_dof(e, elem, elem_type):
+    element = elem[e]
     element_dof = np.zeros(6, dtype=np.int32)  # becomes 12 for T6
     for n in range(element.shape[0]):  # TODO check if applicable for BC
         element_dof[n*2] = element[n] * 2
@@ -142,11 +105,11 @@ def compute_global_dof(e, elements, element_type):
     return element_dof
 
 
-def assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points):
+def assembly(K, num_elem, elem, coord, mat_map, E_mat, h, elem_type):
 
-    for e in range(num_elements):
-        k = stiffness_matrix(e, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
-        element_dof = compute_global_dof(e, elements, element_type)
+    for e in range(num_elem):
+        k = stiffness_matrix(e, elem, coord, mat_map, E_mat, h, elem_type)
+        element_dof = compute_global_dof(e, elem, elem_type)
         for i in range(6):  # becomes 12 for T6
             I = element_dof[i]
             for j in range(6):  # becomes 12 for T6
@@ -155,28 +118,16 @@ def assembly(K, num_elements, elements, nodal_coord, material_map, E_material, t
     return K
 
 
-# def sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points):
-#     for e in range(num_elements):
-#         k = stiffness_matrix(e, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
-#         k_data = np.ravel(k)  # flattened 6x6 local matrix
-#         element_dof = compute_global_dof(e, elements, element_type)
-
-#         row_ind = np.repeat(element_dof, 6)
-#         col_ind = np.tile(element_dof, 6)
-#         K += sparse.csc_matrix((k_data, (row_ind, col_ind)),shape=(2*num_nodes, 2*num_nodes))
-#     return K
-
-
-def sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points):
+def sp_assembly(K, num_elem, num_nodes, elem, coord, mat_map, E_mat, h, elem_type):
     data_tmp = []
     row_data = []
     col_data = []
-    for e in range(num_elements):
-        k = stiffness_matrix(e, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
+    for e in range(num_elem):
+        k = stiffness_matrix(e, elem, coord, mat_map, E_mat, h, elem_type)
         k_data = np.ravel(k)  # flattened 6x6 local matrix
         data_tmp.append(k_data)
 
-        element_dof = compute_global_dof(e, elements, element_type)
+        element_dof = compute_global_dof(e, elem, elem_type)
         row_ind = np.repeat(element_dof, 6)
         col_ind = np.tile(element_dof, 6)
         row_data.append(row_ind)
@@ -190,10 +141,10 @@ def sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map,
     return K
 
 
-def compute_modulus(nodal_coord, boundary, reactions, t):
+def compute_modulus(coord, boundary, reactions, t):
 
     # pick x coord of first point in boundary
-    lenght = nodal_coord[boundary.nodes[0]][0]
+    lenght = coord[boundary.nodes[0]][0]
     x_disp = boundary.value  # x displacement of node 1
     strain = x_disp / lenght
     avg_stress = abs(np.sum(reactions) / (lenght * t))

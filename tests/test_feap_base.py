@@ -42,7 +42,6 @@ def test_feap_1():
 
     # DATA
     element_type = "triangle"
-    integration_points = 1
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
     main_log.info("LOAD CONDITION: %s", load_condition)
@@ -73,7 +72,7 @@ def test_feap_1():
     E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, cheese)
     K = np.zeros((num_nodes * 2, num_nodes * 2))
     R = np.zeros(num_nodes * 2)
-    K = base.assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
+    K = base.assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K)
 
     # contrained dof rows of K are saved now
@@ -146,7 +145,6 @@ def test_feap_2(poisson, D_true, reactions_true):
 
     # DATA
     element_type = "triangle"
-    integration_points = 1
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
     main_log.info("LOAD CONDITION: %s", load_condition)
@@ -177,7 +175,7 @@ def test_feap_2(poisson, D_true, reactions_true):
     main_log.debug("E array:\n %s\n", E_material)
     K = np.zeros((num_nodes * 2, num_nodes * 2))
     R = np.zeros(num_nodes * 2)
-    K = base.assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
+    K = base.assembly(K, num_elements, elements, nodal_coord, material_map, E_material, thickness, element_type)
     main_log.debug("STIFFNESS MATRIX (K) BEFORE BC:\n %s\n", K)
 
     # contrained dof rows of K are saved now
