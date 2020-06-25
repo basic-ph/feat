@@ -108,7 +108,6 @@ def vector_analysis(mesh, element_type, post_process=False, vtk_filename=None):
     # MESH
     # mesh = meshio.read(mesh_path)
     elements = mesh.cells_dict[element_type]
-    logger.debug("PIZZA: %s", elements[0].shape[0])
     nodal_coord = mesh.points[:,:2]
     num_elements = elements.shape[0]
     num_nodes = nodal_coord.shape[0]
