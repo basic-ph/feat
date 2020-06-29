@@ -6,8 +6,10 @@ from feat import mesh
 def test_center_in_box():
     vertex = [0.0, 0.0, 0.0]
     side = 5.0
-    x = 3.0; y = 5.5
-    assert not mesh.center_in_box(x, y, vertex, side)
+    x1 = 3.0; y1 = 5.5
+    x2 = 2.5; y2 = 3.0
+    assert not mesh.center_in_box(x1, y1, vertex, side)
+    assert mesh.center_in_box(x2, y2, vertex, side)
 
 
 def test_circle_intersect_side():

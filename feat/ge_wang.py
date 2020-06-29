@@ -58,7 +58,7 @@ def get_circle_side_intersection(x, y, radius, x1, y1, x2, y2):
                 return Xa, Ya, Xb, Yb
             else:
                 return Xa, Ya
-        else:
+        elif (Xb_collide and Yb_collide):
             return Xb, Yb
     else:
         return None
@@ -85,13 +85,15 @@ def get_included_area(x, y, radius, vertex, side):
         [vertex[0], vertex[1]+side]
     ]
     tot_intersect = []
+    # print(f"x: {x}, y: {y}")
     for s in sides:
+        # print(f"side: ({s[0]}, {s[1]}, {s[2]}, {s[3]})")
         intersect = get_circle_side_intersection(
             x, y, radius, s[0], s[1], s[2], s[3]
         )
+        # print(f"intersect {intersect}")
         if intersect is not None:
             tot_intersect.append(intersect)
-
     # print(f"tot intersect: {tot_intersect}")
     if len(tot_intersect) == 1:  # both intersections on the same side
         Xa = tot_intersect[0][0]; Ya = tot_intersect[0][1]
@@ -139,15 +141,18 @@ def get_included_area(x, y, radius, vertex, side):
 
         included_area = triangle_area + segment_area
     
-    else:  # no intersections, circle completely included inside the square
-        included_area = math.pi * radius**2
+    else:  # no intersections, circle completely inside or completely outside
+        if mesh.center_in_box(x, y, vertex, side):
+            included_area = math.pi * radius**2
+        else:
+            included_area = 0.0
 
     return included_area
 
 
 def separate_circles(rand_gen, w, x0, y0, x1, y1):
-    x0 = x1 + ((x0-x1)* w * rand_gen.random()) / abs(x0-x1)
-    y0 = y1 + ((y0-y1)* w * rand_gen.random()) / abs(y0-y1)
+    x0 = x0 + ((x0-x1)* w * rand_gen.random()) / abs(x0-x1)
+    y0 = y0 + ((y0-y1)* w * rand_gen.random()) / abs(y0-y1)
     return x0, y0
 
 
@@ -158,42 +163,51 @@ def ge_wang_rve(rand_gen, Vf, radius, vertex, side, min_dist, max_iter):
     centers = get_positions(
         rand_gen, number, radius, vertex, side, min_dist, max_iter,
     )
-    print(f"initial centers: {centers}")
-    print(f"initial centers len: {len(centers)}")
     target_area = Vf * side**2
     w = -11.5 * Vf**2 - 4.3*Vf + 8.5  # empirical function
     total_area = 0
     flag = False
 
-    while (total_area < target_area) or (flag == False):
+    # print(f"initial centers: {centers}")
+    # print(f"initial centers len: {len(centers)}")
+    # print(f"target area: {target_area}")
+    # print()
+
+    while (total_area <= target_area) or (flag == False):
+        # print(f"centers len: {len(centers)}")
+        # print(f"centers : {centers}")
+        # print()
         if flag == True:
             additional_centers = get_positions(
                 rand_gen, 2, radius, vertex, side, min_dist, max_iter,
             )
-            print(f"add centers: {additional_centers}")
             centers.extend(additional_centers)
-            print(f"centers after addition: {len(centers)}")
+            # print(f"add centers: {additional_centers}")
+            # print(f"centers after addition: {len(centers)}")
         
         flag = True
         for i in range(len(centers)):
-            # print(f"xi: {centers[i][0]}, yi: {centers[i][1]}")
             for j in range(len(centers)):
-                # print(f"xj: {centers[i][0]}, yj: {centers[i][1]}")
                 if i != j:
                     # print(f"i: {i}, j: {j}")
+                    # print(f"xi: {centers[i][0]}, yi: {centers[i][1]}")
+                    # print(f"xj: {centers[j][0]}, yj: {centers[j][1]}")
                     dist = get_dist(centers[i][0], centers[i][1], centers[j][0], centers[j][1])
                     if dist <= min_dist:
+                        # print(f"separating {i} from {j}")
                         flag = False
                         centers[i][0], centers[i][1] = separate_circles(
                             rand_gen, w, centers[i][0], centers[i][1], centers[j][0], centers[j][1],
                         )
-            total_area += get_included_area(
+            included_area = get_included_area(
                 centers[i][0], centers[i][1], radius, vertex, side,
             )
+            # print(f"included area: {included_area}")
+            total_area += included_area
+            # print(f"total area: {total_area}")
+        # print()
 
     return centers
-
-
 
 
 def create_mesh(geo_path, msh_path, radius, vertex, side, centers, coarse_cl, fine_cl):
@@ -276,16 +290,16 @@ def create_mesh(geo_path, msh_path, radius, vertex, side, centers, coarse_cl, fi
 if __name__ == "__main__":
 
     rand_gen = rand_gen = np.random.default_rng(96)
-    Vf = 0.5
+    Vf = 0.50
     # number = 15
     radius = 1.0
     vertex = [0.0, 0.0, 0.0]
-    side = 10
+    side = 20
     min_dist = 2.1 * radius
     max_iter = 100000
     
     centers = ge_wang_rve(rand_gen, Vf, radius, vertex, side, min_dist, max_iter)
-    print(len(centers))
+    # print(len(centers))
     print(centers)
 
     geo_path = "wang.geo"
