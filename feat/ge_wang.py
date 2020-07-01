@@ -1,9 +1,17 @@
+import logging
 import math
+import time
 
 import numpy as np
-import pygmsh
 
 from feat import mesh
+
+logger = logging.getLogger(__name__)
+
+
+get_dist = lambda x_0, y_0, x_1, y_1: math.sqrt((x_0 - x_1)**2 + (y_0 - y_1)**2)
+
+get_dist_squared = lambda x_0, y_0, x_1, y_1: (x_0 - x_1)**2 + (y_0 - y_1)**2
 
 
 def get_positions(rand_gen, number, radius, vertex, side, min_dist, max_iter):
@@ -62,9 +70,6 @@ def get_circle_side_intersection(x, y, radius, x1, y1, x2, y2):
             return Xb, Yb
     else:
         return None
-
-
-get_dist = lambda x_0, y_0, x_1, y_1: math.sqrt((x_0 - x_1)**2 + (y_0 - y_1)**2)
 
 
 def get_included_area(x, y, radius, vertex, side):
@@ -156,7 +161,7 @@ def separate_circles(rand_gen, w, x0, y0, x1, y1):
     return x0, y0
 
 
-def ge_wang_rve(rand_gen, Vf, radius, vertex, side, min_dist, max_iter):
+def generate_rve(rand_gen, w, Vf, radius, vertex, side, min_dist, max_iter):
 
     number = (Vf * side**2) / (math.pi * radius**2)
 
@@ -164,37 +169,26 @@ def ge_wang_rve(rand_gen, Vf, radius, vertex, side, min_dist, max_iter):
         rand_gen, number, radius, vertex, side, min_dist, max_iter,
     )
     target_area = Vf * side**2
-    w = -11.5 * Vf**2 - 4.3*Vf + 8.5  # empirical function
     total_area = 0
     flag = False
 
-    # print(f"initial centers: {centers}")
-    # print(f"initial centers len: {len(centers)}")
-    # print(f"target area: {target_area}")
-    # print()
+    logger.info("initial number of centers: %s", len(centers))
+    logger.debug("initial centers: %s", centers)
 
     while (total_area <= target_area) or (flag == False):
-        # print(f"centers len: {len(centers)}")
-        # print(f"centers : {centers}")
-        # print()
+        total_area = 0.0
         if flag == True:
             additional_centers = get_positions(
                 rand_gen, 2, radius, vertex, side, min_dist, max_iter,
             )
             centers.extend(additional_centers)
-            # print(f"add centers: {additional_centers}")
-            # print(f"centers after addition: {len(centers)}")
-        
+
         flag = True
         for i in range(len(centers)):
             for j in range(len(centers)):
                 if i != j:
-                    # print(f"i: {i}, j: {j}")
-                    # print(f"xi: {centers[i][0]}, yi: {centers[i][1]}")
-                    # print(f"xj: {centers[j][0]}, yj: {centers[j][1]}")
-                    dist = get_dist(centers[i][0], centers[i][1], centers[j][0], centers[j][1])
+                    dist = get_dist_squared(centers[i][0], centers[i][1], centers[j][0], centers[j][1])
                     if dist <= min_dist:
-                        # print(f"separating {i} from {j}")
                         flag = False
                         centers[i][0], centers[i][1] = separate_circles(
                             rand_gen, w, centers[i][0], centers[i][1], centers[j][0], centers[j][1],
@@ -202,108 +196,28 @@ def ge_wang_rve(rand_gen, Vf, radius, vertex, side, min_dist, max_iter):
             included_area = get_included_area(
                 centers[i][0], centers[i][1], radius, vertex, side,
             )
-            # print(f"included area: {included_area}")
             total_area += included_area
-            # print(f"total area: {total_area}")
-        # print()
-
+        logger.debug("flag: %s", flag)
+        logger.debug("total area: %s", total_area)
+        logger.debug("target area: %s\n", target_area)
     return centers
-
-
-def create_mesh(geo_path, msh_path, radius, vertex, side, centers, coarse_cl, fine_cl):
-
-    geom = pygmsh.opencascade.Geometry()
-
-    disks = []
-    for i in range(len(centers)):
-        fiber = geom.add_disk(centers[i], radius)
-        disks.append(fiber)
-    
-    disk_tags = ", ".join([d.id for d in disks])
-
-    rectangle = geom.add_rectangle(vertex, side, side)
-
-    # geom.add_raw_code(
-    #     f"BooleanIntersection{{ Surface{{{disk_tags}}}; Delete; }} "
-    #     f"{{ Surface{{{rectangle.id}}}; }}"
-    # )
-    # geom.add_raw_code(
-    #     f"t[] = BooleanDifference{{ Surface{{{rectangle.id}}}; Delete; }} "  # saving t[] list for fixing fragment problem
-    #     f"{{ Surface{{{disk_tags}}}; }};"
-    # )
-
-    # e = 0.01
-    # geom.add_raw_code(
-    #     f"p() = Poi0.nt In BoundingBox"
-    #     f"{{{vertex[0]-e}, {vertex[1]-e}, {vertex[2]-e}, {vertex[0]+e}, {vertex[1]+e}, {vertex[2]+e}}};"  # bottom left corner
-    # )
-    # geom.add_raw_code(
-    #     f"q() = Curve In BoundingBox"
-    #     f"{{{vertex[0]-e}, {vertex[1]-e}, {vertex[2]-e}, {vertex[0]+e}, {vertex[1]+side+e}, {vertex[2]+e}}};"  # left side
-    # )
-    # geom.add_raw_code(
-    #     f"r() = Curve In BoundingBox"
-    #     f"{{{vertex[0]+side-e}, {vertex[1]-e}, {vertex[2]-e}, {vertex[0]+side+e}, {vertex[1]+side+e}, {vertex[2]+e}}};"  # right side
-    # )
-
-    # geom.add_raw_code(
-    #     f"boundary[] = Boundary{{ Surface{{{disk_tags}}}; }};"  # identify boundaries of fibers for mesh refinement
-    # )
-
-    # geom.add_raw_code("Field[1] = Distance;")
-    # geom.add_raw_code("Field[1].NNodesByEdge = 100;")
-    # geom.add_raw_code(f"Field[1].EdgesList = {{boundary[]}};")
-    # geom.add_raw_code(
-    #     "Field[2] = Threshold;\n"
-    #     "Field[2].IField = 1;\n"
-    #     f"Field[2].LcMin = {fine_cl};\n"
-    #     f"Field[2].LcMax = {coarse_cl};\n"
-    #     "Field[2].DistMin = 0.01;\n"
-    #     f"Field[2].DistMax = {radius};\n"
-    #     "Background Field = 2;"
-    # )
-    # geom.add_raw_code(
-    #     "Mesh.CharacteristicLengthExtendFromBoundary = 0;\n"
-    #     "Mesh.CharacteristicLengthFromPoints = 0;\n"
-    #     "Mesh.CharacteristicLengthFromCurvature = 0;"
-    # )
-
-    # geom.add_raw_code(
-    #     f"Physical Surface(\"matrix\") = {{t[]}};\n"
-    #     f"Physical Surface(\"fiber\") = {{{disk_tags}}};\n"
-    #     f"Physical Point(\"bottom left corner\") = {{p()}};\n"
-    #     f"Physical Curve(\"left side\") = {{q()}};\n"
-    #     f"Physical Curve(\"right side\") = {{r()}};\n"
-    # )
-    
-    mesh = pygmsh.generate_mesh(
-        geom,
-        geo_filename=str(geo_path),  # uncomment this for saving geo and msh
-        msh_filename=str(msh_path),
-        verbose=False,
-        dim=2,
-    )
-    return mesh
-
 
 
 if __name__ == "__main__":
 
-    rand_gen = rand_gen = np.random.default_rng(96)
-    Vf = 0.50
+    rand_gen = np.random.default_rng(96)
+    Vf = 0.60
     # number = 15
     radius = 1.0
     vertex = [0.0, 0.0, 0.0]
-    side = 20
-    min_dist = 2.1 * radius
+    side = 50
+    min_dist_square = (2.1 * radius)**2
     max_iter = 100000
     
-    centers = ge_wang_rve(rand_gen, Vf, radius, vertex, side, min_dist, max_iter)
+    start_time = time.time()
+    centers = ge_wang_rve(rand_gen, w, Vf, radius, vertex, side, min_dist_square, max_iter)
     # print(len(centers))
     print(centers)
+    print(f"--- {time.time() - start_time} seconds ---")
 
-    geo_path = "wang.geo"
-    msh_path = "wang.msh"
-    coarse_cl = 0.5
-    fine_cl = 0.25
-    mesh = create_mesh(geo_path, msh_path, radius, vertex, side, centers, coarse_cl, fine_cl)
+    centers = mesh.filter_centers(centers, radius, vertex, side)
