@@ -29,8 +29,8 @@ def main():
     args = parser.parse_args()
 
     data = []
-    with open(args.data_path, 'r', newline='') as file:
-        reader = csv.reader(file, quoting=csv.QUOTE_NONNUMERIC)
+    with open(args.data_path, 'r', newline='') as f:
+        reader = csv.reader(f, quoting=csv.QUOTE_NONNUMERIC)
         for row in reader:
             data.append(row)
     

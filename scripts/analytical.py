@@ -1,9 +1,8 @@
 from feat import micro
 
-
-Ef = 100
-Em = 10
-Vf = 0.30
+Ef = 15
+Em = 2.9
+Vf = 0.60
 reuss_E2 = micro.reuss_model(Ef, Em, Vf)
 print(reuss_E2)
 

@@ -7,13 +7,12 @@ import numpy as np
 from feat import ge_wang, mesh
 
 
-def main():
+def main(seed):
 
     Vf = 0.60
-    side = 50
+    side = 100
     w = 0.2  # (-11.5 * Vf**2 - 4.3*Vf + 8.5)  # empirical function
     
-    seed = 11  # 96, 11, 50, 46, 88, 66, 89, 15, 33, 49
     rand_gen = np.random.default_rng(seed)
     radius = 1.0
     vertex = [0.0, 0.0, 0.0]
@@ -36,7 +35,7 @@ def main():
 
 if __name__ == "__main__":
     # LOGGING (you can skip this)
-    log_lvl = logging.INFO
+    log_lvl = logging.DEBUG
     logger = logging.getLogger()
     logger.setLevel(log_lvl)
     handler = logging.StreamHandler()
@@ -46,5 +45,10 @@ if __name__ == "__main__":
     logger.addHandler(handler)
 
     start_time = time.time()
-    main()
+    
+    seeds = [11]  # [96, 11, 50, 46, 88, 66, 89, 15, 33, 49]
+    for seed in seeds:
+        logger.info("Creating sample for seed: %s", seed)
+        main(seed)
+    
     print(f"--- {time.time() - start_time} seconds ---")

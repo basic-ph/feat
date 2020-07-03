@@ -117,8 +117,8 @@ def vector_analysis(mesh, element_type, post_process=False, vtk_filename=None):
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
     # MATERIAL
-    matrix = base.Material("matrix", 10, 0.3, load_condition)
-    fiber = base.Material("fiber", 100, 0.3, load_condition)
+    matrix = base.Material("matrix", 10, 0.3, load_condition)  # BSL914C epoxy
+    fiber = base.Material("fiber", 100, 0.3, load_condition)  # T300 carbon fiber
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
