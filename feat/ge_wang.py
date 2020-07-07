@@ -173,7 +173,7 @@ def generate_rve(rand_gen, w, Vf, radius, vertex, side, min_dist, max_iter):
     flag = False
 
     logger.info("initial number of centers: %s", len(centers))
-    logger.debug("initial centers: %s", centers)
+    # logger.debug("initial centers: %s", centers)
 
     while (total_area <= target_area) or (flag == False):
         total_area = 0.0

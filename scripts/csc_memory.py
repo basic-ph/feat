@@ -9,13 +9,17 @@ print(a.toarray())
 print((a.indptr))
 print(a.indices)
 print(a.data)
-a.sum_duplicates()
+# a.sum_duplicates()
+# print()
+# print(a.toarray())
+# print((a.indptr))
+# print(a.indices)
+# print(a.data)
 print()
-print(a.toarray())
-print((a.indptr))
-print(a.indices)
-print(a.data)
 
+a += sparse.csc_matrix((data, indices, indptr), shape=(3, 3))
+print(a.toarray())
+print(a.data)
 # nel mio caso i valori non nulli sono tanti quanti i valori locali calcolati
 # questo perché le K locali non hanno nessun valore nullo, tutti i dof dipendono da quelli vicini
 # quindi per 10 elementi avremo 36x10=360 entries tutte non nulle

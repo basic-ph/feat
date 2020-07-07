@@ -41,7 +41,7 @@ def main():
 
     # DATA
     Vf = 0.6  # fiber volume fraction
-    max_side = 70 
+    max_side = 50
 
     radius = 1.0  # fiber radius
     min_distance = 2.1 * radius

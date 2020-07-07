@@ -84,7 +84,7 @@ def sp_base_analysis(mesh, element_type):
     E_material = base.compute_E_material(num_elements, material_map, mesh.field_data, matrix, fiber)
     K = sparse.csc_matrix((2 * num_nodes, 2 * num_nodes))
     R = np.zeros(num_nodes * 2)
-    K = base.sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map, E_material, thickness, element_type, integration_points)
+    K = base.sp_assembly(K, num_elements, num_nodes, elements, nodal_coord, material_map, E_material, thickness, element_type)
     
     # save constrained dof rows of K
     # dirichlet dof are built only for boundaries with related reactions
@@ -149,7 +149,7 @@ def vector_analysis(mesh, element_type, post_process=False, vtk_filename=None):
         D_ready = np.column_stack((D[::2], D[1::2], np.zeros(num_nodes)))
         D_dict = {"displacement": D_ready}
         mesh.point_data = D_dict
-        mesh.write(f"../data/happy/{vtk_filename}.vtk")
+        mesh.write(f"../data/vtk/sample-05/{vtk_filename}.vtk")
         logger.debug("VTK file created")
 
     return modulus
@@ -171,6 +171,6 @@ if __name__ == "__main__":
     start_time = time.time()
     mesh = meshio.read("../data/msh/perf_25.msh")
     # E = base_analysis(mesh, "triangle")
-    # E = sp_base_analysis(mesh, "triangle")
-    E = vector_analysis(mesh, "triangle", post_process=False, vtk_filename="reboot_a")
+    E = sp_base_analysis(mesh, "triangle")
+    # E = vector_analysis(mesh, "triangle", post_process=False, vtk_filename="reboot_a")
     print(f"--- {time.time() - start_time} seconds ---")

@@ -12,7 +12,7 @@ def main():
     # [
     #   0 p: id del sample,
     #   1 s: id dello step (RVE)
-    #   2 coarse_cl,
+    #   2 m: id della mesh,
     #   3 box_side,
     #   4 num_nodes,
     #   5 E2,
@@ -59,12 +59,12 @@ def main():
     sigma = statistics.stdev(best_data)
     
     textstr = (
-        f"$\\overline{{E}}_2$ = {mean:.2f} GPa\n"
-        f"$\sigma$ = {sigma:.2f} Gpa"
+        f"$\\overline{{E}}_2$ = {mean:.3f} GPa\n"
+        f"$\sigma$ = {sigma:.3f} Gpa"
     )
     ax.text(
         0.7,
-        0.6,
+        0.5,
         textstr,
         transform=ax.transAxes,
         fontsize=12,
