@@ -40,8 +40,8 @@ def main():
         analysis = fem.vector_analysis
 
     # DATA
-    Vf = 0.6  # fiber volume fraction
-    max_side = 50
+    Vf = 0.3  # fiber volume fraction
+    max_side = 70
 
     radius = 1.0  # fiber radius
     min_distance = 2.1 * radius

@@ -117,8 +117,8 @@ def vector_analysis(mesh, element_type, post_process=False, vtk_filename=None):
     load_condition = "plane strain"  # "plane stress" or "plane strain"
     thickness = 1
     # MATERIAL
-    matrix = base.Material("matrix", 10, 0.3, load_condition)  # BSL914C epoxy
-    fiber = base.Material("fiber", 100, 0.3, load_condition)  # T300 carbon fiber
+    matrix = base.Material("matrix", 4, 0.38, load_condition)  # BSL914C epoxy
+    fiber = base.Material("fiber", 15, 0.07, load_condition)  # T300 carbon fiber
 
     # BOUNDARY CONDITIONS INSTANCES
     left_side = bc.DirichletBC("left side", mesh, [0], 0.0)
@@ -149,7 +149,7 @@ def vector_analysis(mesh, element_type, post_process=False, vtk_filename=None):
         D_ready = np.column_stack((D[::2], D[1::2], np.zeros(num_nodes)))
         D_dict = {"displacement": D_ready}
         mesh.point_data = D_dict
-        mesh.write(f"../data/vtk/sample-05/{vtk_filename}.vtk")
+        mesh.write(f"../data/vtk/sample/{vtk_filename}.vtk")
         logger.debug("VTK file created")
 
     return modulus
