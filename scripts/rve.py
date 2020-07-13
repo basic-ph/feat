@@ -113,7 +113,7 @@ def main():
                     moduli.append(E2)
                     prev_E2 = moduli[m-1]
                     rel_diff = abs(E2 - prev_E2) / prev_E2  # difference relative to precedent obtained estimate
-                    if rel_diff < 0.0025:  # 0.2%
+                    if rel_diff < 0.0025:  # 0.25%
                         data.append([p, s, m, box_side, num_nodes, E2, 1])  # 1 means converged result
                         logger.info("SAMPLE %s - STEP %s - MESH %s - converged!\n", p, s, m)
                         break  # mesh convergence obtained, continue with the next random realization

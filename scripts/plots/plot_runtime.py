@@ -1,6 +1,12 @@
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-
+mpl.style.use("seaborn")
+plt.rcParams.update({
+    "font.family": "serif",  # use serif/main font for text elements
+    # "text.usetex": True,     # use inline math for ticks
+    # "pgf.rcfonts": False     # don't setup fonts from rc parameters
+})
 
 num_nodes_data = [8826, 17820, 35327, 141282, 565549]
 num_dofs_data = [n*2 for n in num_nodes_data]
@@ -8,7 +14,7 @@ num_dofs_short = [n*2 for n in num_nodes_data[:2]]
 
 time_base_data = [
     round(t, 3)
-    for t in [22.343284845352173 , 184.2389760017395]
+    for t in [22.343284845352173, 184.2389760017395]
 ]
 time_sparse_data = [
     round(t, 3)
@@ -43,22 +49,23 @@ y_vector = [(y1/x1)*n for n in num_dofs_data]
 # PLOT ---------------------------------------------------------------------------------
 fig, ax = plt.subplots()
 
-ax.plot(num_dofs_short, time_base_data,"o-C0", label="base")
-ax.plot(num_dofs_data, time_sparse_data,"o-C1", label="sparse")
-ax.plot(num_dofs_data, time_vector_data,"o-C2", label="vector")
+ax.plot(num_dofs_short, time_base_data, "o-C0", label="base")
+ax.plot(num_dofs_data, time_sparse_data, "o-C1", label="sparse")
+ax.plot(num_dofs_data, time_vector_data, "o-C2", label="vector")
 
 # linear functions
 # ax.plot(num_dofs_data, y_sparse, "--C1", label="void")
 # ax.plot(num_dofs_data, y_vector, "--C2", label="void")
 
 ax.set(
-    xlabel='number of dofs',
+    xlabel='DOFs number',
     ylabel='Time [s]',
-    title='Execution Time'
+    # title='Execution Time'
 )
-ax.grid()
+# ax.grid()
 ax.set_yscale('log')
 ax.set_xscale('log')
-fig.legend()
 
+fig.legend(loc='lower right', bbox_to_anchor=(0.9, 0.15))
+fig.tight_layout()
 plt.show()

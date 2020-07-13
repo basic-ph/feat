@@ -11,7 +11,7 @@ from feat import ge_wang, mesh
 def main(seed):
     print(f"Creating sample for seed: {seed}")
     Vf = 0.60
-    side = 100
+    side = 120
     w = 0.2  # (-11.5 * Vf**2 - 4.3*Vf + 8.5)  # empirical function
     
     rand_gen = np.random.default_rng(seed)
@@ -50,7 +50,7 @@ if __name__ == "__main__":
 
     start_time = time.time()
     
-    seeds = [50, 46]  # [96, 11, 50, 46, 88, 66, 89, 15, 33, 49]
+    seeds = [50]  # [96, 11, 50, 46, 88, 66, 89, 15, 33, 49]
     for seed in seeds:
         # logger.info("Creating sample for seed: %s", seed)
         main(seed)

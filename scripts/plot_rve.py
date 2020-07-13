@@ -63,8 +63,8 @@ def main():
         f"$\sigma$ = {sigma:.3f} Gpa"
     )
     ax.text(
-        0.7,
         0.5,
+        0.3,
         textstr,
         transform=ax.transAxes,
         fontsize=12,
@@ -88,10 +88,11 @@ def main():
     # ax.plot(steps, min_data, ".")
     
     ax.set(
-        xlabel='RVE size (side of the square box)',
+        xlabel='RVE size',
         ylabel='$E_2$ [GPa]',
         # title='RVE Convergence'
     )
+    # ax.set_ylim(8.5, 9.5)
     # ax.grid()
     fig.legend(loc='upper right', bbox_to_anchor=(0.95, 0.95))
 

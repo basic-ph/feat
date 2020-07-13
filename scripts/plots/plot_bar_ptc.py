@@ -7,9 +7,14 @@ import matplotlib as mpl
 # solve_pct_time = [182.686/185.427, 0.261/2.547, 0.270/0.441]
 
 
-# mpl.style.use("seaborn")
+mpl.style.use("seaborn")
+plt.rcParams.update({
+    "font.family": "serif",  # use serif/main font for text elements
+    # "text.usetex": True,     # use inline math for ticks
+    # "pgf.rcfonts": False     # don't setup fonts from rc parameters
+})
 
-labels = ["assembly", "dirichlet BC", "solve"]
+labels = ["assembly", "Dirichlet BC", "solve"]
 
 base_pct = [2.449/185.247, 0.232/185.427, 182.686/185.427]
 sparse_pct = [2.201/2.547, 0.036/2.547, 0.261/2.547]
